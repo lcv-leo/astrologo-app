@@ -1,0 +1,12 @@
+{
+  "name": "oraculo-app",
+  "compatibility_date": "2024-03-01",
+  "pages_build_output_dir": "./dist",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "oraculo_astrologico_db",
+      "database_id": "7474fe8e-a56c-4a13-810a-4ec02133bc14"
+    }
+  ]
+}

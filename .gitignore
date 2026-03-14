@@ -1,0 +1,14 @@
+# Módulo: astrologo-app/.gitignore
+# Versão: v1.0.0
+# Descrição: Regras de exclusão de rastreamento para o novo app.
+
+node_modules/
+dist/
+build/
+.output/
+.env
+.env.local
+.dev.vars
+.wrangler/
+.DS_Store
+Thumbs.db

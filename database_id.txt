@@ -1,0 +1,9 @@
+
+  "d1_databases": [
+    {
+      "binding": "oraculo_astrologico_db",
+      "database_name": "oraculo_astrologico_db",
+      "database_id": "7474fe8e-a56c-4a13-810a-4ec02133bc14"
+    }
+  ]
+}
