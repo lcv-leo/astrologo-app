@@ -1,6 +1,6 @@
 # Módulo: .github/workflows/deploy.yml
-# Versão: v1.0.0
-# Descrição: Automação completa CI/CD para arquitetura Single-Folder (astrologo-app).
+# Versão: v1.1.0
+# Descrição: Automação CI/CD. Realocação da variável FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 para o escopo do Job, garantindo a supressão do aviso de depreciação do Node 20 pelos runners do GitHub.
 
 name: Deploy Pipeline Cloudflare
 
@@ -9,12 +9,12 @@ on:
     branches:
       - main
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   deploy-app:
     runs-on: ubuntu-latest
+    # Injeção no escopo do Job para sobrescrever o ambiente do runner instantaneamente
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
