@@ -1,0 +1,36 @@
+# Módulo: .github/workflows/deploy.yml
+# Versão: v1.0.0
+# Descrição: Automação completa CI/CD para arquitetura Single-Folder (astrologo-app). Compilação nativa em Node.js 24 e deploy forçado em ambiente de Produção no Cloudflare Pages.
+
+name: Deploy Pipeline Cloudflare
+
+on:
+  push:
+    branches:
+      - main
+
+# Força o GitHub Actions a utilizar o Node.js 24 internamente, evitando avisos de depreciação
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy-app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          
+      - name: Instalar Dependências, Compilar e Publicar
+        # O aplicativo está na raiz do repositório, logo os comandos rodam no diretório atual
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npm install
+          npm run build
+          npx wrangler pages deploy ./dist --project-name=astrologo-app --branch production
