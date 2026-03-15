@@ -1,6 +1,6 @@
 # Módulo: .github/workflows/deploy.yml
-# Versão: v1.1.0
-# Descrição: Automação CI/CD. Realocação da variável FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 para o escopo do Job, garantindo a supressão do aviso de depreciação do Node 20 pelos runners do GitHub.
+# Versão: v1.2.0
+# Descrição: Automação CI/CD. Solução definitiva para a depreciação do Node 20. Atualização direta dos módulos actions/checkout e actions/setup-node para a versão v5 (suporte nativo ao Node.js 24). Remoção de variáveis de ambiente obsoletas.
 
 name: Deploy Pipeline Cloudflare
 
@@ -12,15 +12,12 @@ on:
 jobs:
   deploy-app:
     runs-on: ubuntu-latest
-    # Injeção no escopo do Job para sobrescrever o ambiente do runner instantaneamente
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout do código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '24'
           
