@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Compass, Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, Info, Star, Database, RefreshCw, X, HelpCircle, Mail, Send, Trash2 } from 'lucide-react';
+import { Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, Info, Star, Database, RefreshCw, X, HelpCircle, Mail, Send, Trash2 } from 'lucide-react';
 
 const ADMIN_VERSION = "2.01.00"; // A11y Fixes, Tailwind Native Styles & Zero Trust
 
