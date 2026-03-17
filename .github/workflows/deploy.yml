@@ -58,3 +58,35 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name="astrologo-admin" --branch="production"
           workingDirectory: astrologo-admin
+          wranglerVersion: '4' # Diretriz explícita para contornar falhas de retrocompatibilidade do pacote v3
+
+# ... (etapas anteriores de checkout e setup-node) ...
+
+      - name: Build Frontend Público
+        working-directory: ./astrologo-frontend
+        run: npm run build
+
+      # NOVA ETAPA: Validação estrita do File System antes do Deploy
+      - name: Auditoria de Artefatos (Debug de File System)
+        working-directory: ./astrologo-frontend
+        run: |
+          echo "=== LISTANDO DIRETÓRIO RAIZ DO FRONTEND ==="
+          ls -la
+          echo "=== VERIFICANDO EXISTÊNCIA DO DIRETÓRIO DIST ==="
+          if [ -d "dist" ]; then 
+            echo "SUCESSO: Diretório 'dist' encontrado. Conteúdo:"
+            ls -la dist
+          else 
+            echo "FALHA CRÍTICA: Diretório 'dist' não foi gerado pelo Vite."
+            echo "Verifique as configurações do vite.config.ts e do package.json."
+            exit 1 # Força a falha da esteira IMEDIATAMENTE antes de chamar a Cloudflare
+          fi
+
+      - name: Deploy Frontend (Cloudflare Pages)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name="astrologo-frontend" --branch="production"
+          workingDirectory: astrologo-frontend
+          wranglerVersion: '4' # Diretriz explícita para contornar falhas de retrocompatibilidade do pacote v3
