@@ -20,15 +20,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '24' # Migrado para v22 LTS para máxima estabilidade com ferramentas de build e CLI da Cloudflare
 
       - name: Install Frontend Dependencies
         working-directory: ./astrologo-frontend
-        run: npm install
+        run: npm ci # Utilização de 'npm ci' garante uma instalação determinística e limpa baseada no package-lock.json
 
       - name: Install Admin Dependencies
         working-directory: ./astrologo-admin
-        run: npm install
+        run: npm ci
 
       - name: Sincronizar o Backend (Functions) com os Módulos
         run: |
@@ -44,21 +44,17 @@ jobs:
         run: npm run build
 
       - name: Deploy Frontend (Cloudflare Pages)
-        uses: cloudflare/pages-action@v1
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: astrologo-frontend
-          directory: dist
+          command: pages deploy dist --project-name="astrologo-frontend" --branch="production"
           workingDirectory: astrologo-frontend
-          branch: production
 
       - name: Deploy Admin (Cloudflare Pages)
-        uses: cloudflare/pages-action@v1
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: astrologo-admin
-          directory: dist
+          command: pages deploy dist --project-name="astrologo-admin" --branch="production"
           workingDirectory: astrologo-admin
-          branch: production
