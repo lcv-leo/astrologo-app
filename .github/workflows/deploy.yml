@@ -3,7 +3,7 @@ name: Deploy Astrologo Apps
 on:
   push:
     branches:
-      - main
+      - production
 
 jobs:
   deploy-admin:
