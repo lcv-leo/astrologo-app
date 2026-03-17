@@ -1,31 +1,64 @@
-# Módulo: .github/workflows/deploy.yml
-# Versão: v1.2.0
-# Descrição: Automação CI/CD. Solução definitiva para a depreciação do Node 20. Atualização direta dos módulos actions/checkout e actions/setup-node para a versão v5 (suporte nativo ao Node.js 24). Remoção de variáveis de ambiente obsoletas.
-
-name: Deploy Pipeline Cloudflare
+name: Deploy Oráculo Monorepo
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "production" ]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
-  deploy-app:
+  deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
     steps:
-      - name: Checkout do código
-        uses: actions/checkout@v5
-      
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
-          node-version: '24'
-          
-      - name: Instalar Dependências, Compilar e Publicar
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          node-version: '20'
+
+      - name: Install Frontend Dependencies
+        working-directory: ./astrologo-frontend
+        run: npm install
+
+      - name: Install Admin Dependencies
+        working-directory: ./astrologo-admin
+        run: npm install
+
+      - name: Sincronizar o Backend (Functions) com os Módulos
         run: |
-          npm install
-          npm run build
-          npx wrangler pages deploy ./dist --project-name=astrologo-app --branch production
+          cp -r functions astrologo-frontend/
+          cp -r functions astrologo-admin/
+
+      - name: Build Frontend Público
+        working-directory: ./astrologo-frontend
+        run: npm run build
+
+      - name: Build Câmara Admin
+        working-directory: ./astrologo-admin
+        run: npm run build
+
+      - name: Deploy Frontend (Cloudflare Pages)
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: astrologo-frontend
+          directory: dist
+          workingDirectory: astrologo-frontend
+          branch: production
+
+      - name: Deploy Admin (Cloudflare Pages)
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: astrologo-admin
+          directory: dist
+          workingDirectory: astrologo-admin
+          branch: production
