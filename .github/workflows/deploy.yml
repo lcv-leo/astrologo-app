@@ -1,57 +1,61 @@
-name: Deploy Oráculo Monorepo
+name: Deploy Astrologo Apps
 
 on:
   push:
-    branches: [ "production" ]
+    branches:
+      - main
 
 jobs:
-  deploy:
+  deploy-admin:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       deployments: write
+    name: Deploy Astrologo Admin
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
 
-      - name: Install Dependencies
-        run: |
-          npm ci --prefix ./astrologo-frontend
-          npm ci --prefix ./astrologo-admin
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./astrologo-admin
 
-      - name: Build Projects
-        run: |
-          npm run build --prefix ./astrologo-frontend
-          npm run build --prefix ./astrologo-admin
-
-      - name: Stage API for Deployment
-        run: |
-          mkdir -p api_deploy
-          echo "API" > api_deploy/index.html
-          cp -r functions api_deploy/
-
-      - name: Deploy Frontend
+      - name: Build and Deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy astrologo-frontend/dist --project-name="mapa-astral-lcv-app-br" --branch="production"
+          command: npm run deploy
+          workingDirectory: astrologo-admin
 
-      - name: Deploy Admin
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    name: Deploy Astrologo Frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./astrologo-frontend
+
+      - name: Build and Deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy astrologo-admin/dist --project-name="astrologo-admin-lcv-app-br" --branch="production"
-
-      - name: Deploy API
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy api_deploy --project-name="oraculo-api" --branch="production"
+          command: npm run deploy
+          workingDirectory: astrologo-frontend
