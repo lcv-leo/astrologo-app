@@ -23,7 +23,7 @@ export async function onRequestPost(context: any) {
                 const srSplit = (geo.sunrise || "06:05").split(':').map(Number); srH = srSplit[0]; srM = srSplit[1];
                 const ssSplit = (geo.sunset || "18:00").split(':').map(Number); ssH = ssSplit[0]; ssM = ssSplit[1];
             }
-        } catch (e) { console.log("Fallback Geográfico."); }
+        } catch (e) { console.log("Usando Fallback Geográfico (RJ)."); }
 
         const [ano, mes, dia] = dataNascimento.split('-').map(Number);
         const [hLocal, mLocal] = horaNascimento.split(':').map(Number);

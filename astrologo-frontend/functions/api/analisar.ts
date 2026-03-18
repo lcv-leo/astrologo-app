@@ -23,13 +23,13 @@ Retorne APENAS HTML formatado em <p>, <strong>, <ul>, <li>. Sem marcações mark
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
     });
-    
+
     const aiData = await response.json();
     let analise = aiData?.candidates?.[0]?.content?.parts?.[0]?.text || "<p>Perturbação no éter na geração.</p>";
     analise = analise.replace(/```html/g, '').replace(/```/g, '');
 
     if (env.DB && id) {
-      try { await env.DB.prepare("UPDATE mapas_astrologicos SET analise_ia = ? WHERE id = ?").bind(analise, id).run(); } 
+      try { await env.DB.prepare("UPDATE mapas_astrologicos SET analise_ia = ? WHERE id = ?").bind(analise, id).run(); }
       catch (dbError) { console.log("Erro silencioso ao atualizar análise no banco."); }
     }
 
