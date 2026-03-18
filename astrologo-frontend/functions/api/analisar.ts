@@ -1,7 +1,11 @@
-export async function onRequestPost(context: any) {
+interface Env { GEMINI_API_KEY: string; DB: { prepare: (query: string) => { bind: (...args: unknown[]) => { run: () => Promise<void> } } }; }
+interface Context { request: Request; env: Env; }
+
+export async function onRequestPost(context: Context) {
   const { request, env } = context;
   try {
-    const { id, dadosAstronomica, dadosTropical, dadosGlobais, query } = await request.json();
+    const payload = await request.json() as Record<string, unknown>;
+    const { id, dadosAstronomica, dadosTropical, dadosGlobais, query } = payload;
 
     const dadosAnalise = `Sistema Tropical: ${JSON.stringify(dadosTropical)} | Sistema Astronômico Constelacional: ${JSON.stringify(dadosAstronomica)} | Globais (Tatwas e Numerologia): ${JSON.stringify(dadosGlobais)}`;
 
@@ -24,17 +28,20 @@ Retorne APENAS HTML formatado em <p>, <strong>, <ul>, <li>. Sem marcações mark
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
     });
 
-    const aiData = await response.json();
-    let analise = aiData?.candidates?.[0]?.content?.parts?.[0]?.text || "<p>Perturbação no éter na geração.</p>";
+    const aiData = await response.json() as Record<string, unknown>;
+    const candidates = aiData?.candidates as Array<Record<string, unknown>>;
+    const content = candidates?.[0]?.content as Record<string, unknown>;
+    const parts = content?.parts as Array<Record<string, string>>;
+    let analise = parts?.[0]?.text || "<p>Perturbação no éter na geração.</p>";
     analise = analise.replace(/```html/g, '').replace(/```/g, '');
 
-    if (env.DB && id) {
+    if (env.DB && id && typeof id === 'string') {
       try { await env.DB.prepare("UPDATE mapas_astrologicos SET analise_ia = ? WHERE id = ?").bind(analise, id).run(); }
-      catch (dbError) { console.log("Erro silencioso ao atualizar análise no banco."); }
+      catch { console.log("Erro silencioso ao atualizar análise no banco."); }
     }
 
     return new Response(JSON.stringify({ success: true, analise }), { headers: { "Content-Type": "application/json" } });
-  } catch (error: any) {
+  } catch {
     return new Response(JSON.stringify({ success: false, error: "Falha na comunicação Cósmica." }), { status: 500 });
   }
 }

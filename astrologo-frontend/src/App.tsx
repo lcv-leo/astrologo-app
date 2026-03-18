@@ -1,13 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Compass, Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, Info, Star, MapPin, User, Calendar, Clock, X, HelpCircle, Mail, Send } from 'lucide-react';
 
-const APP_VERSION = "2.02.00";
+const APP_VERSION = "2.03.00";
+
+interface AstroData { astro: string; signo: string; simbolo: string; }
+interface UmbandaData { posicao: string; orixa: string; simbolo: string; }
+interface DadosGlobais { tatwa: { principal: string; sub: string; }; numerologia: { expressao: number; caminhoVida: number; vibracaoHora: number; }; }
+interface ResultData { id: string; query: { nome: string; localNascimento: string; dataNascimento: string; horaNascimento: string; }; dadosGlobais: DadosGlobais; dadosAstronomica: { astrologia: AstroData[]; umbanda: UmbandaData[] }; dadosTropical: { astrologia: AstroData[]; umbanda: UmbandaData[] }; }
+interface ModalProps { type: 'astronomica' | 'tropical' | null; onClose: () => void; }
+interface EmailModalProps { isOpen: boolean; onClose: () => void; onSend: (email: string) => void; isSending: boolean; }
+interface AutocompleteProps { value: string; onChange: (v: string) => void; }
+interface BlocoProps { titulo: string; dadosAstrologia: AstroData[]; dadosUmbanda: UmbandaData[]; icon: React.ElementType; isTropical: boolean; onInfoClick: () => void; }
+interface ResultViewProps { result: ResultData; analiseIa: string; onSolicitarAnalise?: () => void; loadingAi?: boolean; openInfoModal: (t: 'astronomica' | 'tropical') => void; }
 
 const formatarData = (dataStr: string) => {
   if (!dataStr) return ''; const p = dataStr.split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : dataStr;
 };
 
-const InfoModal = ({ type, onClose }: { type: 'astronomica' | 'tropical' | null, onClose: () => void }) => {
+const InfoModal: React.FC<ModalProps> = ({ type, onClose }) => {
   if (!type) return null;
   const content = type === 'astronomica' ? {
     titulo: "Astrologia Astronômica", icon: <Star className="w-6 h-6 text-amber-500" />, borderColor: "border-amber-300", titleColor: "text-amber-700",
@@ -29,7 +39,7 @@ const InfoModal = ({ type, onClose }: { type: 'astronomica' | 'tropical' | null,
   );
 };
 
-const EmailModal = ({ isOpen, onClose, onSend, isSending }: any) => {
+const EmailModal: React.FC<EmailModalProps> = ({ isOpen, onClose, onSend, isSending }) => {
   const [email, setEmail] = useState('');
   if (!isOpen) return null;
   return (
@@ -48,8 +58,8 @@ const EmailModal = ({ isOpen, onClose, onSend, isSending }: any) => {
   );
 };
 
-const LocationAutocomplete = ({ value, onChange }: { value: string, onChange: (v: string) => void }) => {
-  const [query, setQuery] = useState(''); const [suggestions, setSuggestions] = useState<any[]>([]);
+const LocationAutocomplete: React.FC<AutocompleteProps> = ({ value, onChange }) => {
+  const [query, setQuery] = useState(''); const [suggestions, setSuggestions] = useState<Array<Record<string, string>>>([]);
   const [isOpen, setIsOpen] = useState(false); const [loading, setLoading] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -66,7 +76,7 @@ const LocationAutocomplete = ({ value, onChange }: { value: string, onChange: (v
     fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchQuery)}&count=5&language=pt&format=json`)
       .then(res => res.json()).then(data => { setSuggestions(data.results || []); if (data.results?.length > 0) setIsOpen(true); }).finally(() => setLoading(false));
   };
-  const handleSelect = (s: any) => { const locName = [s.name, s.admin1, s.country].filter(Boolean).join(', '); setQuery(locName); onChange(locName); setIsOpen(false); };
+  const handleSelect = (s: Record<string, string>) => { const locName = [s.name, s.admin1, s.country].filter(Boolean).join(', '); setQuery(locName); onChange(locName); setIsOpen(false); };
   return (
     <div className="relative w-full" ref={wrapperRef}>
       <input id="localNascimentoInput" required type="text" placeholder="Ex: Rio de Janeiro, RJ" autoComplete="off" className="w-full p-4 pl-12 bg-white/60 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm backdrop-blur-sm placeholder-slate-400" value={query || value} onChange={handleInputChange} onFocus={() => suggestions.length > 0 && setIsOpen(true)} />
@@ -83,7 +93,7 @@ const LocationAutocomplete = ({ value, onChange }: { value: string, onChange: (v
   );
 };
 
-export const RenderBlocoAstrologico = ({ titulo, dadosAstrologia, dadosUmbanda, icon: Icon, isTropical, onInfoClick }: any) => {
+export const RenderBlocoAstrologico: React.FC<BlocoProps> = ({ titulo, dadosAstrologia, dadosUmbanda, icon: Icon, isTropical, onInfoClick }) => {
   const colorTheme = isTropical ? 'orange' : 'indigo'; const colorHex = isTropical ? 'text-orange-600' : 'text-indigo-600'; const bgSoft = isTropical ? 'bg-orange-50' : 'bg-indigo-50';
   return (
     <div className={`mt-10 pt-10 border-t border-${colorTheme}-200 animate-in slide-in-from-top-4 duration-700 w-full`}>
@@ -95,7 +105,7 @@ export const RenderBlocoAstrologico = ({ titulo, dadosAstrologia, dadosUmbanda, 
       <div className="bg-white/60 backdrop-blur-xl p-5 md:p-8 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full mb-8">
         <h3 className="text-lg md:text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3">I. Astrologia ({isTropical ? '12 Signos' : '13 Signos'})</h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          {dadosAstrologia.map((a: any, i: number) => (
+          {dadosAstrologia.map((a, i) => (
             <div key={i} className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 flex flex-col justify-center shadow-sm"><p className="text-[10px] md:text-xs text-slate-500 mb-1 truncate font-medium">{a.astro}</p><p className="font-bold flex items-center gap-2 text-slate-800 text-xs sm:text-sm md:text-base truncate">{a.simbolo} {a.signo}</p></div>
           ))}
         </div>
@@ -104,7 +114,7 @@ export const RenderBlocoAstrologico = ({ titulo, dadosAstrologia, dadosUmbanda, 
       <div className="bg-white/60 backdrop-blur-xl p-5 md:p-8 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full overflow-hidden">
         <h3 className={`text-xl md:text-2xl font-bold ${colorHex} mb-6 flex items-center gap-2 border-b border-slate-200 pb-4`}><Moon className="inline w-6 h-6" /> II. Umbanda ({isTropical ? 'Tropical' : 'Astronômica'})</h3>
         <div className="grid grid-cols-3 gap-2 md:gap-4 w-full">
-          {dadosUmbanda.map((u: any, i: number) => (
+          {dadosUmbanda.map((u, i) => (
             <div key={i} className={`flex flex-col items-center justify-between p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow min-w-0 w-full h-full`}>
               <span className="text-2xl md:text-4xl mb-2 md:mb-3 mt-1 drop-shadow-sm flex-shrink-0">{u.simbolo}</span>
               <div className="flex items-center justify-center w-full mb-2 md:mb-3 h-8 sm:h-10"><p className="text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs text-slate-500 font-bold uppercase tracking-wider text-center leading-tight line-clamp-2 px-0.5 w-full text-balance">{u.posicao}</p></div>
@@ -126,7 +136,7 @@ export const RenderBlocoAstrologico = ({ titulo, dadosAstrologia, dadosUmbanda, 
   );
 };
 
-export const ResultView = ({ result, analiseIa, onSolicitarAnalise, loadingAi, openInfoModal }: any) => {
+export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSolicitarAnalise, loadingAi, openInfoModal }) => {
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
 
@@ -137,7 +147,7 @@ export const ResultView = ({ result, analiseIa, onSolicitarAnalise, loadingAi, o
     t += `✨ *AGORA, A VERDADE OCULTA...* ✨\n_A ilusão sazonal ficou para trás. Contemple sua verdadeira assinatura estelar:_\n\n`;
     t += `⭐ *MÓDULO II: ASTRONÔMICO CONSTELACIONAL (13 Signos)* - A Alma\n☀️ Sol: ${result.dadosAstronomica.astrologia[0].signo} | ⬆️ Asc: ${result.dadosAstronomica.astrologia[1].signo} | 🌙 Lua: ${result.dadosAstronomica.astrologia[2].signo} | 🔭 MC: ${result.dadosAstronomica.astrologia[3].signo}\n👑 Coroa: ${result.dadosAstronomica.umbanda[0].orixa} | 🌊 Adjuntó: ${result.dadosAstronomica.umbanda[1].orixa} | 🏹 Frente: ${result.dadosAstronomica.umbanda[2].orixa}\n🌟 Decanato: ${result.dadosAstronomica.umbanda[3].orixa} | ⏳ Faixa (3h): ${result.dadosAstronomica.umbanda[4].orixa} | 🪐 Astro: ${result.dadosAstronomica.umbanda[5].orixa}\n\n`;
     if (analiseIa) {
-      let iaTxt = analiseIa.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<strong>(.*?)<\/strong>/gi, '*$1*').replace(/<b>(.*?)<\/b>/gi, '*$1*').replace(/<em>(.*?)<\/em>/gi, '_$1_').replace(/<i>(.*?)<\/i>/gi, '_$1_').replace(/<li>(.*?)<\/li>/gi, '• $1\n').replace(/<\/ul>/gi, '\n').replace(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi, '\n*$1*\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
+      const iaTxt = analiseIa.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<strong>(.*?)<\/strong>/gi, '*$1*').replace(/<b>(.*?)<\/b>/gi, '*$1*').replace(/<em>(.*?)<\/em>/gi, '_$1_').replace(/<i>(.*?)<\/i>/gi, '_$1_').replace(/<li>(.*?)<\/li>/gi, '• $1\n').replace(/<\/ul>/gi, '\n').replace(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi, '\n*$1*\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
       t += `🧠 *SÍNTESE DA INTELIGÊNCIA ARTIFICIAL*\n\n` + iaTxt.replace(/\n{3,}/g, '\n\n').trim() + `\n\n`;
     }
     t += `✨ _Gerado via Oráculo Celestial_ ✨`; return t;
@@ -145,7 +155,7 @@ export const ResultView = ({ result, analiseIa, onSolicitarAnalise, loadingAi, o
 
   const gerarHtmlRelatorio = () => {
     let h = `<div style="font-family: sans-serif; color: #1e293b; background-color: #f8fafc; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px;"><h2 style="color: #d97706; text-align: center; text-transform: uppercase;">🌌 Dossiê Astrológico</h2><p style="text-align: center; font-size: 18px; margin-bottom: 5px;"><strong>${result.query.nome}</strong></p><p style="text-align: center; font-size: 14px; color: #64748b; margin-top: 0;">${result.query.localNascimento}<br/>${formatarData(result.query.dataNascimento)} às ${result.query.horaNascimento}</p><h3 style="color: #0ea5e9; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">🌬️ Forças Globais</h3><p><strong>Tatwa Principal:</strong> ${result.dadosGlobais.tatwa.principal} <br/><strong>Sub-tatwa:</strong> ${result.dadosGlobais.tatwa.sub}</p><p><strong>Numerologia:</strong> Expressão ${result.dadosGlobais.numerologia.expressao} | Caminho ${result.dadosGlobais.numerologia.caminhoVida} | Hora ${result.dadosGlobais.numerologia.vibracaoHora}</p>`;
-    const extrairHtml = (titulo: string, dados: any, cor: string) => {
+    const extrairHtml = (titulo: string, dados: Record<string, any>, cor: string) => {
       return `<h3 style="color: ${cor}; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 25px;">${titulo}</h3><p><strong>Astros:</strong> Sol em ${dados.astrologia[0].signo} | Asc em ${dados.astrologia[1].signo} | Lua em ${dados.astrologia[2].signo} | MC em ${dados.astrologia[3].signo}</p><p><strong>Umbanda:</strong> Coroa: ${dados.umbanda[0].orixa} | Adjuntó: ${dados.umbanda[1].orixa} | Frente: ${dados.umbanda[2].orixa}<br/>Decanato: ${dados.umbanda[3].orixa} | Faixa (3h): ${dados.umbanda[4].orixa} | Astro: ${dados.umbanda[5].orixa}</p>`;
     };
     h += extrairHtml("🌞 Módulo I: Tropical Sazonal (A Persona)", result.dadosTropical, "#ea580c");
@@ -161,8 +171,8 @@ export const ResultView = ({ result, analiseIa, onSolicitarAnalise, loadingAi, o
     setSendingEmail(true);
     try {
       const res = await fetch('/api/enviar-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ emailDestino, relatorioHtml: gerarHtmlRelatorio(), relatorioTexto: gerarTextoRelatorio(), nomeConsulente: result.query.nome }) });
-      const data = await res.json(); if (data.success) { alert(data.message); setEmailModalOpen(false); } else { alert(data.error); }
-    } catch (e) { alert("Falha na ponte do e-mail."); }
+      const data = await res.json() as Record<string, unknown>; if (data.success) { alert(String(data.message)); setEmailModalOpen(false); } else { alert(String(data.error)); }
+    } catch { alert("Falha na ponte do e-mail."); }
     setSendingEmail(false);
   };
 
@@ -171,17 +181,17 @@ export const ResultView = ({ result, analiseIa, onSolicitarAnalise, loadingAi, o
       <EmailModal isOpen={emailModalOpen} onClose={() => setEmailModalOpen(false)} onSend={dispararEmail} isSending={sendingEmail} />
 
       <div className="flex flex-wrap justify-center gap-3 md:gap-4 mb-10">
-        <button onClick={copiar} className="flex-1 min-w-[140px] max-w-[200px] flex items-center justify-center gap-2 bg-white text-slate-700 hover:bg-slate-50 px-4 py-3 rounded-full transition-all text-[11px] md:text-sm font-bold uppercase tracking-wider border border-slate-200 shadow-sm hover:shadow-md"><Copy className="w-4 h-4" /> Copiar Tudo</button>
-        <button onClick={whatsapp} className="flex-1 min-w-[140px] max-w-[200px] flex items-center justify-center gap-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-4 py-3 rounded-full transition-all text-[11px] md:text-sm font-bold uppercase tracking-wider border border-emerald-200 shadow-sm hover:shadow-md"><Share2 className="w-4 h-4" /> WhatsApp</button>
-        <button onClick={() => setEmailModalOpen(true)} className="flex-1 min-w-[140px] max-w-[200px] flex items-center justify-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 px-4 py-3 rounded-full transition-all text-[11px] md:text-sm font-bold uppercase tracking-wider border border-blue-200 shadow-sm hover:shadow-md"><Mail className="w-4 h-4" /> E-mail</button>
+        <button onClick={copiar} aria-label="Copiar Tudo" title="Copiar Tudo" className="flex-1 min-w-[140px] max-w-[200px] flex items-center justify-center gap-2 bg-white text-slate-700 hover:bg-slate-50 px-4 py-3 rounded-full transition-all text-[11px] md:text-sm font-bold uppercase tracking-wider border border-slate-200 shadow-sm hover:shadow-md"><Copy className="w-4 h-4" /> Copiar Tudo</button>
+        <button onClick={whatsapp} aria-label="Compartilhar no WhatsApp" title="WhatsApp" className="flex-1 min-w-[140px] max-w-[200px] flex items-center justify-center gap-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-4 py-3 rounded-full transition-all text-[11px] md:text-sm font-bold uppercase tracking-wider border border-emerald-200 shadow-sm hover:shadow-md"><Share2 className="w-4 h-4" /> WhatsApp</button>
+        <button onClick={() => setEmailModalOpen(true)} aria-label="Enviar por E-mail" title="E-mail" className="flex-1 min-w-[140px] max-w-[200px] flex items-center justify-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 px-4 py-3 rounded-full transition-all text-[11px] md:text-sm font-bold uppercase tracking-wider border border-blue-200 shadow-sm hover:shadow-md"><Mail className="w-4 h-4" /> E-mail</button>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4 md:gap-6 w-full mb-8">
-        <div className="bg-white/60 backdrop-blur-xl p-5 md:p-8 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full flex flex-col justify-center min-w-0">
+        <div className="bg-white/70 backdrop-blur-2xl p-5 md:p-8 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full flex flex-col justify-center min-w-0">
           <h3 className="text-lg md:text-xl font-bold text-indigo-600 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Wind className="text-blue-500 w-5 h-5" /> Forças Globais: Tatwas</h3>
           <div className="space-y-3"><div className="bg-white/80 p-3 md:p-4 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm"><p className="text-[11px] md:text-xs text-slate-500">Principal</p><p className="font-bold text-slate-800 text-sm md:text-base truncate pl-2">{result.dadosGlobais.tatwa.principal}</p></div><div className="bg-white/80 p-3 md:p-4 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm"><p className="text-[11px] md:text-xs text-slate-500">Sub-tatwa</p><p className="font-bold text-slate-800 text-sm md:text-base truncate pl-2">{result.dadosGlobais.tatwa.sub}</p></div></div>
         </div>
-        <div className="bg-white/60 backdrop-blur-xl p-5 md:p-8 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full flex flex-col justify-center min-w-0">
+        <div className="bg-white/70 backdrop-blur-2xl p-5 md:p-8 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full flex flex-col justify-center min-w-0">
           <h3 className="text-lg md:text-xl font-bold text-indigo-600 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Hash className="text-blue-500 w-5 h-5" /> Forças Globais: Numerologia</h3>
           <div className="space-y-3"><div className="flex justify-between items-center bg-white/80 p-3 rounded-xl border border-slate-100 shadow-sm"><span className="text-[11px] md:text-xs text-slate-500">Expressão</span><strong className="text-sm md:text-base text-slate-800">{result.dadosGlobais.numerologia.expressao}</strong></div><div className="flex justify-between items-center bg-white/80 p-3 rounded-xl border border-slate-100 shadow-sm"><span className="text-[11px] md:text-xs text-slate-500">Caminho</span><strong className="text-sm md:text-base text-slate-800">{result.dadosGlobais.numerologia.caminhoVida}</strong></div><div className="flex justify-between items-center bg-white/80 p-3 rounded-xl border border-slate-100 shadow-sm"><span className="text-[11px] md:text-xs text-slate-500">Hora</span><strong className="text-sm md:text-base text-slate-800">{result.dadosGlobais.numerologia.vibracaoHora}</strong></div></div>
         </div>
@@ -201,7 +211,7 @@ export const ResultView = ({ result, analiseIa, onSolicitarAnalise, loadingAi, o
 
       {!analiseIa && onSolicitarAnalise && (
         <div className="flex justify-center mt-14 mb-10 w-full border-t border-slate-200 pt-12">
-          <button aria-label="Solicitar Análise de IA" onClick={onSolicitarAnalise} disabled={loadingAi} className="group relative px-6 md:px-10 py-5 bg-white border border-blue-200 rounded-full flex items-center justify-center gap-4 hover:bg-blue-50 transition-all shadow-[0_8px_32px_rgba(0,0,0,0.08)] hover:shadow-2xl w-full md:w-auto">
+          <button aria-label="Solicitar Análise de IA" title="Solicitar Análise" onClick={onSolicitarAnalise} disabled={loadingAi} className="group relative px-6 md:px-10 py-5 bg-white border border-blue-200 rounded-full flex items-center justify-center gap-4 hover:bg-blue-50 transition-all shadow-[0_8px_32px_rgba(0,0,0,0.08)] hover:shadow-2xl w-full md:w-auto">
             {loadingAi ? <Sparkles className="animate-spin text-blue-600 w-6 h-6" /> : <BrainCircuit className="text-blue-600 group-hover:scale-110 transition-transform w-6 h-6" />}
             <span className="font-black tracking-wide text-slate-800 text-sm md:text-lg uppercase">Solicitar Análise Psicanalítica por IA</span>
           </button>
@@ -211,7 +221,7 @@ export const ResultView = ({ result, analiseIa, onSolicitarAnalise, loadingAi, o
       {analiseIa && (
         <div className="mt-10 p-6 md:p-12 bg-white/80 backdrop-blur-2xl rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-8 duration-500 w-full overflow-hidden">
           <h3 className="text-xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600 mb-6 md:mb-8 border-b border-slate-200 pb-4 flex items-center gap-3"><BrainCircuit className="text-blue-600 w-6 h-6 md:w-8 md:h-8 flex-shrink-0" /> Síntese do Mestre (IA)</h3>
-          <div className="text-slate-700 text-sm md:text-base lg:text-lg leading-relaxed md:leading-loose space-y-4 [&_p]:text-justify [&_p]:indent-8 [&_p]:mb-4 [&_strong]:text-slate-900 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-2 [&_li]:text-justify [&_h1]:text-2xl [&_h1]:text-left [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:text-indigo-700 [&_h2]:text-xl [&_h2]:text-left [&_h2]:font-bold [&_h2]:mb-3 [&_h2]:text-indigo-700 [&_h3]:text-lg [&_h3]:text-left [&_h3]:font-bold [&_h3]:mb-2 [&_h3]:text-blue-600" dangerouslySetInnerHTML={{ __html: analiseIa }} />
+          <div className="text-slate-700 text-sm md:text-base lg:text-lg leading-relaxed md:leading-loose space-y-4" dangerouslySetInnerHTML={{ __html: analiseIa }} />
         </div>
       )}
     </div>
@@ -221,24 +231,26 @@ export const ResultView = ({ result, analiseIa, onSolicitarAnalise, loadingAi, o
 export default function App() {
   const [formData, setFormData] = useState({ nome: '', dataNascimento: '', horaNascimento: '', localNascimento: '' });
   const [loading, setLoading] = useState(false); const [loadingAi, setLoadingAi] = useState(false);
-  const [result, setResult] = useState<any>(null); const [analiseIa, setAnaliseIa] = useState<string>('');
+  const [result, setResult] = useState<ResultData | null>(null); const [analiseIa, setAnaliseIa] = useState<string>('');
   const [modalType, setModalType] = useState<'astronomica' | 'tropical' | null>(null);
 
   const calcularMapa = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setAnaliseIa(''); setResult(null);
     try {
       const res = await fetch('/api/calcular', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
-      const data = await res.json(); if (data.success) setResult(data); else alert(data.error);
-    } catch (err) { alert("Erro de conexão."); }
+      const data = await res.json() as { success: boolean; error?: string };
+      if (data.success) setResult(data as unknown as ResultData); else alert(data.error);
+    } catch { alert("Erro de conexão."); }
     setLoading(false);
   };
 
   const solicitarAnalise = async () => {
+    if (!result) return;
     setLoadingAi(true);
     try {
       const res = await fetch('/api/analisar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: result.id, dadosAstronomica: result.dadosAstronomica, dadosTropical: result.dadosTropical, dadosGlobais: result.dadosGlobais, query: result.query }) });
-      const data = await res.json(); if (data.analise) setAnaliseIa(data.analise);
-    } catch (err) { alert("A Inteligência falhou."); }
+      const data = await res.json() as { analise?: string }; if (data.analise) setAnaliseIa(data.analise);
+    } catch { alert("A Inteligência falhou."); }
     setLoadingAi(false);
   };
 
@@ -258,7 +270,7 @@ export default function App() {
           <form onSubmit={calcularMapa} className="bg-white/60 backdrop-blur-2xl p-6 md:p-10 rounded-[2.5rem] border border-white shadow-[0_8px_32px_rgba(0,0,0,0.08)] w-full grid md:grid-cols-2 gap-5 md:gap-8 max-w-4xl">
             <div className="flex flex-col gap-2 w-full">
               <label htmlFor="nomeConsulente" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><User className="w-4 h-4 text-blue-500" /> Nome Completo</label>
-              <input id="nomeConsulente" required type="text" placeholder="Ex: João da Silva" className="w-full p-4 pl-5 bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm" onChange={e => setFormData({ ...formData, nome: e.target.value })} />
+              <input id="nomeConsulente" required type="text" aria-label="Nome Completo" title="Nome Completo" placeholder="Ex: João da Silva" className="w-full p-4 pl-5 bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm" onChange={e => setFormData({ ...formData, nome: e.target.value })} />
             </div>
             <div className="flex flex-col gap-2 w-full">
               <label htmlFor="localNascimentoInput" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><MapPin className="w-4 h-4 text-blue-500" /> Local de Nascimento</label>
@@ -266,13 +278,13 @@ export default function App() {
             </div>
             <div className="flex flex-col gap-2 w-full">
               <label htmlFor="dataNascimento" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><Calendar className="w-4 h-4 text-blue-500" /> Data de Nascimento</label>
-              <input id="dataNascimento" required type="date" className="w-full p-4 pl-5 bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm [color-scheme:light]" onChange={e => setFormData({ ...formData, dataNascimento: e.target.value })} />
+              <input id="dataNascimento" required type="date" aria-label="Data de Nascimento" title="Data de Nascimento" className="w-full p-4 pl-5 bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm [color-scheme:light]" onChange={e => setFormData({ ...formData, dataNascimento: e.target.value })} />
             </div>
             <div className="flex flex-col gap-2 w-full">
               <label htmlFor="horaNascimento" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><Clock className="w-4 h-4 text-blue-500" /> Horário <span className="text-slate-400 normal-case">(HH:mm)</span></label>
-              <input id="horaNascimento" required type="time" className="w-full p-4 pl-5 bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm [color-scheme:light]" onChange={e => setFormData({ ...formData, horaNascimento: e.target.value })} />
+              <input id="horaNascimento" required type="time" aria-label="Horário de Nascimento" title="Horário de Nascimento" className="w-full p-4 pl-5 bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm [color-scheme:light]" onChange={e => setFormData({ ...formData, horaNascimento: e.target.value })} />
             </div>
-            <button type="submit" disabled={loading} className="md:col-span-2 mt-4 w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black p-5 rounded-2xl flex justify-center items-center gap-3 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 text-lg uppercase tracking-wider">
+            <button type="submit" disabled={loading} aria-label="Extrair Arquitetura Sagrada" title="Extrair Arquitetura Sagrada" className="md:col-span-2 mt-4 w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black p-5 rounded-2xl flex justify-center items-center gap-3 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 text-lg uppercase tracking-wider">
               {loading ? <Sparkles className="animate-spin" /> : <><Compass className="w-6 h-6" /> Extrair Arquitetura Sagrada</>}
             </button>
           </form>

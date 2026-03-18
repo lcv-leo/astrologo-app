@@ -1,9 +1,12 @@
-export async function onRequestPost(context: any) {
+interface Env { GEMINI_API_KEY: string; DB: { prepare: (query: string) => { bind: (...args: unknown[]) => { run: () => Promise<void> } } }; }
+interface Context { request: Request; env: Env; }
+
+export async function onRequestPost(context: Context) {
     const { request, env } = context;
 
     try {
-        const { nome, dataNascimento, horaNascimento, localNascimento } = await request.json();
-
+        const payload = await request.json() as Record<string, string>;
+        const { nome, dataNascimento, horaNascimento, localNascimento } = payload;
         const tz = -3;
 
         const prompt = `Retorne APENAS um JSON com lat, lon, sunrise e sunset de "${localNascimento}" no dia ${dataNascimento} considerando o fuso horário oficial de Brasília (UTC-3). Ex: {"lat":-22.9068,"lon":-43.1729,"sunrise":"06:05","sunset":"18:15"}`;
@@ -14,8 +17,11 @@ export async function onRequestPost(context: any) {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
-            const aiData = await response.json();
-            let jsonText = aiData?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+            const aiData = await response.json() as Record<string, unknown>;
+            const candidates = aiData?.candidates as Array<Record<string, unknown>>;
+            const content = candidates?.[0]?.content as Record<string, unknown>;
+            const parts = content?.parts as Array<Record<string, string>>;
+            const jsonText = parts?.[0]?.text || "{}";
             const match = jsonText.match(/\{[\s\S]*\}/);
             if (match) {
                 const geo = JSON.parse(match[0]);
@@ -23,7 +29,7 @@ export async function onRequestPost(context: any) {
                 const srSplit = (geo.sunrise || "06:05").split(':').map(Number); srH = srSplit[0]; srM = srSplit[1];
                 const ssSplit = (geo.sunset || "18:00").split(':').map(Number); ssH = ssSplit[0]; ssM = ssSplit[1];
             }
-        } catch (e) { console.log("Usando Fallback Geográfico (RJ)."); }
+        } catch { console.log("Usando Fallback Geográfico (RJ)."); }
 
         const [ano, mes, dia] = dataNascimento.split('-').map(Number);
         const [hLocal, mLocal] = horaNascimento.split(':').map(Number);
@@ -32,9 +38,10 @@ export async function onRequestPost(context: any) {
         if (utcHour >= 24) { utcHour -= 24; utcDay += 1; } else if (utcHour < 0) { utcHour += 24; utcDay -= 1; }
 
         const getJd = (y: number, m: number, d: number, h: number, min: number) => {
-            if (m <= 2) { y -= 1; m += 12; }
-            const A = Math.floor(y / 100); const B = 2 - A + Math.floor(A / 4);
-            return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + (h + min / 60) / 24 + B - 1524.5;
+            let year = y; let month = m;
+            if (month <= 2) { year -= 1; month += 12; }
+            const A = Math.floor(year / 100); const B = 2 - A + Math.floor(A / 4);
+            return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + d + (h + min / 60) / 24 + B - 1524.5;
         };
 
         const j_date = getJd(ano, mes, utcDay, utcHour, mLocal);
@@ -59,9 +66,9 @@ export async function onRequestPost(context: any) {
         const ascLon = wrap(Math.atan2(Math.cos(local_sidereal * rad), -(Math.sin(local_sidereal * rad) * Math.cos(eps * rad) + Math.tan(lat * rad) * Math.sin(eps * rad))) / rad);
 
         const signosTropicais = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem", "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"];
-        const getTropicalInfo = (lon: number) => {
-            const idx = Math.floor(wrap(lon) / 30);
-            const decanato = Math.floor((wrap(lon) % 30) / 10);
+        const getTropicalInfo = (lonVal: number) => {
+            const idx = Math.floor(wrap(lonVal) / 30);
+            const decanato = Math.floor((wrap(lonVal) % 30) / 10);
             return { nome: signosTropicais[idx], decanato: decanato > 2 ? 2 : decanato };
         };
 
@@ -74,16 +81,16 @@ export async function onRequestPost(context: any) {
             { nome: "Sagitário", inicio: 266.3, fim: 299.7 }, { nome: "Capricórnio", inicio: 299.7, fim: 327.6 },
             { nome: "Aquário", inicio: 327.6, fim: 351.5 }
         ];
-        const getIauInfo = (tropicalLon: number) => {
+        const getIauInfo = (tLon: number) => {
             const shift = (ano - 2000) * (50.29 / 3600);
-            const j2000Lon = wrap(tropicalLon - shift);
+            const j2000Lon = wrap(tLon - shift);
             let found = IAU_BORDERS[0];
             for (const b of IAU_BORDERS) {
                 if (b.inicio > b.fim) { if (j2000Lon >= b.inicio || j2000Lon < b.fim) { found = b; break; } }
                 else { if (j2000Lon >= b.inicio && j2000Lon < b.fim) { found = b; break; } }
             }
-            let width = wrap(found.fim - found.inicio); if (width === 0) width = 360;
-            let progress = wrap(j2000Lon - found.inicio);
+            const width = wrap(found.fim - found.inicio) || 360;
+            const progress = wrap(j2000Lon - found.inicio);
             let decanIndex = Math.floor((progress / width) * 3);
             if (decanIndex > 2) decanIndex = 2;
             return { nome: found.nome, decanato: decanIndex };
@@ -105,19 +112,15 @@ export async function onRequestPost(context: any) {
         };
 
         const dataLocalObj = new Date(Date.UTC(ano, mes - 1, dia, 12, 0, 0));
-        let diaDaSemanaIdx = dataLocalObj.getUTCDay();
+        const diaDaSemanaIdx = dataLocalObj.getUTCDay();
 
         const orixasVibracaoMap = ["Orixalá", "Yemanjá", "Ogum", "Yori", "Xangô", "Oxossi", "Yorimá"];
         const orixaDia = orixasVibracaoMap[diaDaSemanaIdx];
         const orixaHora = getOrixaHora(hLocal + (mLocal / 60));
 
         const getPlanetaryHour = () => {
-            const bMins = hLocal * 60 + mLocal;
-            const srMins = srH * 60 + srM;
-            const ssMins = ssH * 60 + ssM;
-
-            let isDay = false; let dayOfWeekAstrological = diaDaSemanaIdx;
-            let minsFromStart = 0; let periodDurationMins = 0;
+            const bMins = hLocal * 60 + mLocal; const srMins = srH * 60 + srM; const ssMins = ssH * 60 + ssM;
+            let isDay = false; let dayOfWeekAstrological = diaDaSemanaIdx; let minsFromStart = 0; let periodDurationMins = 0;
 
             if (bMins >= srMins && bMins < ssMins) {
                 isDay = true; minsFromStart = bMins - srMins; periodDurationMins = ssMins - srMins;
@@ -131,7 +134,7 @@ export async function onRequestPost(context: any) {
                 }
             }
 
-            let hourLength = periodDurationMins / 12; if (hourLength === 0) hourLength = 60;
+            const hourLength = periodDurationMins / 12 || 60;
 
             const hourIndex = Math.floor(minsFromStart / hourLength);
             const chaldean = ["Saturno", "Júpiter", "Marte", "Sol", "Vênus", "Mercúrio", "Lua"];
@@ -139,7 +142,6 @@ export async function onRequestPost(context: any) {
 
             const rulerOfDay = dayRulerPlanets[dayOfWeekAstrological];
             const startIndex = chaldean.indexOf(rulerOfDay);
-
             const totalHoursPassed = isDay ? hourIndex : 12 + hourIndex;
             const currentPlanetIndex = (startIndex + totalHoursPassed) % 7;
 
@@ -151,7 +153,7 @@ export async function onRequestPost(context: any) {
         const orixaHoraPlanetaria = planetaParaOrixa[planetaRegenteHora] || "Orixalá";
         const planetaSimbolos: Record<string, string> = { "Sol": "☀️", "Lua": "🌙", "Marte": "♂️", "Mercúrio": "☿️", "Júpiter": "♃", "Vênus": "♀️", "Saturno": "♄" };
 
-        const gerarDadosSistema = (infoSol: any, infoLua: any, infoAsc: any, infoMc: any) => {
+        const gerarDadosSistema = (infoSol: Record<string, any>, infoLua: Record<string, any>, infoAsc: Record<string, any>, infoMc: Record<string, any>) => {
             const orixaCoroa = tabelaV[infoSol.nome]?.[0] || "Orixalá";
             const orixaFrente = tabelaV[infoMc.nome]?.[0] || "Orixalá";
             const orixaDecanato = tabelaV[infoSol.nome]?.[infoSol.decanato] || "Orixalá";
@@ -176,13 +178,17 @@ export async function onRequestPost(context: any) {
         const subIdx = (mainIdx + Math.floor((minsFromSunrise % 24) / 4.8)) % 5;
 
         const reduceNum = (n: number | string) => {
-            let sum = String(n).replace(/\D/g, '').split('').reduce((a, b) => a + parseInt(b), 0);
-            while (sum > 9 && ![11, 22, 33].includes(sum)) sum = sum.toString().split('').reduce((a, b) => a + parseInt(b), 0);
+            let sum = String(n).replace(/\D/g, '').split('').reduce((a, b) => a + parseInt(b, 10), 0);
+            while (sum > 9 && ![11, 22, 33].includes(sum)) sum = sum.toString().split('').reduce((a, b) => a + parseInt(b, 10), 0);
             return sum;
         };
         const calcExp = (str: string) => {
             let sum = 0; const map: Record<string, number> = { a: 1, j: 1, s: 1, b: 2, k: 2, t: 2, c: 3, l: 3, u: 3, d: 4, m: 4, v: 4, e: 5, n: 5, w: 5, f: 6, o: 6, x: 6, g: 7, p: 7, y: 7, h: 8, q: 8, z: 8, i: 9, r: 9 };
-            str.toLowerCase().normalize("NFD").replace(/[^a-z\s]/g, "").split(/\s+/).forEach(w => { let wSum = 0; for (let c of w) if (map[c]) wSum += map[c]; sum += reduceNum(wSum); });
+            str.toLowerCase().normalize("NFD").replace(/[^a-z\s]/g, "").split(/\s+/).forEach(w => {
+                let wSum = 0;
+                for (const char of w) if (map[char]) wSum += map[char];
+                sum += reduceNum(wSum);
+            });
             return reduceNum(sum);
         };
 
@@ -196,11 +202,11 @@ export async function onRequestPost(context: any) {
                 await env.DB.prepare(`INSERT INTO mapas_astrologicos (id, nome, data_nascimento, hora_nascimento, local_nascimento, dados_astronomica, dados_tropical, dados_globais) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
                     .bind(idUnico, nome, dataNascimento, horaNascimento, localNascimento, JSON.stringify(dadosAstronomica), JSON.stringify(dadosTropical), JSON.stringify(dadosGlobais)).run();
             }
-        } catch (e) { console.error("Falha ao gravar no BD.", e); }
+        } catch { console.error("Falha ao gravar no BD."); }
 
         return new Response(JSON.stringify({ success: true, id: idUnico, dadosGlobais, dadosAstronomica, dadosTropical, query: { nome, dataNascimento, horaNascimento, localNascimento } }), { headers: { "Content-Type": "application/json" } });
 
-    } catch (error: any) {
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    } catch (error) {
+        return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }), { status: 500 });
     }
 }
