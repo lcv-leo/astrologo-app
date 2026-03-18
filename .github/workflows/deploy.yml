@@ -1,61 +1,56 @@
-name: Deploy Astrologo Apps
+name: Deploy Oraculo Monorepo
 
 on:
   push:
-    branches:
-      - production
+    branches: [ "production" ]
 
 jobs:
-  deploy-admin:
+  deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       deployments: write
-    name: Deploy Astrologo Admin
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
-      - name: Install dependencies
-        run: npm install
-        working-directory: ./astrologo-admin
-
-      - name: Build and Deploy
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: npm run deploy
-          workingDirectory: astrologo-admin
-
-  deploy-frontend:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      deployments: write
-    name: Deploy Astrologo Frontend
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: npm install
+      - name: Install Frontend Dependencies
         working-directory: ./astrologo-frontend
+        run: npm install
 
-      - name: Build and Deploy
-        uses: cloudflare/wrangler-action@v3
+      - name: Build Frontend
+        working-directory: ./astrologo-frontend
+        run: npm run build
+
+      - name: Deploy Frontend to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: npm run deploy
-          workingDirectory: astrologo-frontend
+          projectName: oraculo-app
+          directory: ./astrologo-frontend/dist
+          workingDirectory: ./astrologo-frontend
+          branch: production
+
+      - name: Install Admin Dependencies
+        working-directory: ./astrologo-admin
+        run: npm install
+
+      - name: Build Admin
+        working-directory: ./astrologo-admin
+        run: npm run build
+
+      - name: Deploy Admin to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: astrologo-admin
+          directory: ./astrologo-admin/dist
+          workingDirectory: ./astrologo-admin
+          branch: production

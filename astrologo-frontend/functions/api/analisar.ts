@@ -12,7 +12,7 @@ O aplicativo exibe ao usuário uma jornada narrativa de choque de realidade: PRI
 Siga EXATAMENTE esta mesma ordem! Faça DUAS análises profundas e separadas:
 1º. Astrologia Tropical (A Persona)
 2º. Astrologia Astronômica (A Essência da Alma)
-Integre a Astrologia, a Umbanda Esotérica da Raiz de Guiné de W. W. da Matta e Silva, os Tatwas, a Psicologia Analítica de C. G. Jung e a Psicologia Transpessoal. Ao final, efetue uma síntese conjunta comparativa.
+Integre a Astrologia, a Umbanda Esotérica da Raiz de Guiné de W. W. da Matta e Silva, os Tatwas e a Psicologia Analítica de C. G. Jung. Ao final, efetue uma síntese conjunta comparativa.
 
 ATENÇÃO RIGOROSA 1: Analise a influência do "Astro" (o 6º card da Umbanda, que representa a Hora Planetária do minuto exato baseada na Sequência dos Caldeus) e sua sinergia com o Orixá regente.
 ATENÇÃO RIGOROSA 2: Inclua de forma explícita e obrigatória a informação de que a Coroa calculada via data de nascimento serve para revelar a Vibração Original "Teórica/Magnética". Informe claramente que, por necessidades e cobranças cármicas de encarnação, a entidade que atua "de frente" pode pertencer a outra Linha, e que a verdadeira coroa e guias de frente só podem ser atestados de forma inequívoca e prática no terreiro através da "Lei de Pemba" (sinais riscados com Flecha, Chave e Raiz) e pelo Mestre de Iniciação.
