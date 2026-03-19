@@ -1,12 +1,53 @@
 @import "tailwindcss";
 
+:root {
+  --md3-primary: #4f46e5;
+  --md3-on-primary: #ffffff;
+  --md3-secondary: #0f766e;
+  --md3-tertiary: #7c3aed;
+  --md3-surface: #f8fafc;
+  --md3-surface-container: rgba(255, 255, 255, 0.62);
+  --md3-outline: rgba(255, 255, 255, 0.65);
+  --md3-shadow: 0 12px 36px rgba(79, 70, 229, 0.15);
+  --md3-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
 html,
 body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-  background-color: #f8fafc;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(79, 70, 229, 0.14) 0%, rgba(248, 250, 252, 0) 45%),
+    radial-gradient(120% 90% at 90% 95%, rgba(14, 165, 233, 0.1) 0%, rgba(248, 250, 252, 0) 55%),
+    var(--md3-surface);
   color: #1e293b;
+  font-feature-settings: 'ss01' on, 'cv01' on;
+}
+
+#root {
+  isolation: isolate;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(79, 70, 229, 0.2);
+}
+
+.md3-glass {
+  background: var(--md3-surface-container);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--md3-outline);
+  box-shadow: var(--md3-shadow);
+  transition: all 220ms var(--md3-ease);
+}
+
+.md3-glass:hover {
+  box-shadow: 0 14px 42px rgba(79, 70, 229, 0.2);
 }
 
 ::-webkit-scrollbar {

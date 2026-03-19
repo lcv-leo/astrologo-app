@@ -1,11 +1,59 @@
-interface EnvBindings { GEMINI_API_KEY: string; DB: { prepare: (query: string) => { bind: (...args: unknown[]) => { run: () => Promise<void> } } }; }
+import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, rateLimitHeaders, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
+
+interface EnvBindings { GEMINI_API_KEY: string; DB: D1DatabaseLike; }
 interface Context { request: Request; env: EnvBindings; }
+
+const RATE_LIMIT = { route: 'analisar', limit: 6, windowMs: 15 * 60 * 1000 };
+
+const sanitizeGeneratedHtml = (input: string): string => {
+  const withoutFences = input.replace(/```html/gi, '').replace(/```/g, '');
+
+  return withoutFences
+    .replace(/<\s*(script|style|iframe|object|embed|link|meta|base|form|input|button|textarea|select|svg|math)[^>]*>[\s\S]*?<\s*\/\s*\1>/gi, '')
+    .replace(/<\s*(script|style|iframe|object|embed|link|meta|base|form|input|button|textarea|select|svg|math)[^>]*\/?>/gi, '')
+    .replace(/\son\w+\s*=\s*(['"]).*?\1/gi, '')
+    .replace(/\sstyle\s*=\s*(['"]).*?\1/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/<(?!\/?(p|strong|ul|li|em|b|i|h1|h2|h3|br)\b)[^>]*>/gi, '')
+    .replace(/<(p|strong|ul|li|em|b|i|h1|h2|h3|br)\s[^>]*>/gi, '<$1>')
+    .trim();
+};
+
+export async function onRequestOptions(context: Context) {
+  return new Response(null, { headers: { ...getCorsHeaders(context.request, 'https://mapa-astral.lcv.app.br'), ...securityHeaders } });
+}
 
 export async function onRequestPost(context: Context) {
   const { request, env } = context;
+  const corsHeaders = getCorsHeaders(request, 'https://mapa-astral.lcv.app.br');
+
+  if (hasDisallowedOrigin(request)) {
+    return new Response(JSON.stringify({ success: false, error: "Origem não permitida." }), {
+      status: 403,
+      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
+    });
+  }
+
+  const rateLimit = await enforceRateLimit(env.DB, request, RATE_LIMIT);
+  const limitHeaders = rateLimitHeaders(rateLimit);
+
+  if (!rateLimit.allowed) {
+    return new Response(JSON.stringify({ success: false, error: "Muitas análises em sequência. Aguarde antes de solicitar outra." }), {
+      status: 429,
+      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+    });
+  }
+
   try {
     const payload = await request.json() as Record<string, unknown>;
     const { id, dadosAstronomica, dadosTropical, dadosGlobais, query } = payload;
+
+    if (!dadosAstronomica || !dadosTropical || !dadosGlobais || !query) {
+      return new Response(JSON.stringify({ success: false, error: "Dados insuficientes para análise." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+      });
+    }
 
     const dadosAnalise = `Sistema Tropical: ${JSON.stringify(dadosTropical)} | Sistema Astronômico Constelacional: ${JSON.stringify(dadosAstronomica)} | Globais (Tatwas e Numerologia): ${JSON.stringify(dadosGlobais)}`;
 
@@ -28,20 +76,28 @@ Retorne APENAS HTML formatado em <p>, <strong>, <ul>, <li>. Sem marcações mark
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
     });
 
+    if (!response.ok) {
+      return new Response(JSON.stringify({ success: false, error: "Falha no provedor de IA." }), {
+        status: 502,
+        headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+      });
+    }
+
     const aiData = await response.json() as Record<string, unknown>;
     const candidates = aiData?.candidates as Array<Record<string, unknown>>;
     const content = candidates?.[0]?.content as Record<string, unknown>;
     const parts = content?.parts as Array<Record<string, string>>;
     let analise = parts?.[0]?.text || "<p>Perturbação no éter na geração.</p>";
-    analise = analise.replace(/```html/g, '').replace(/```/g, '');
+    analise = sanitizeGeneratedHtml(analise);
+    if (!analise) analise = "<p>Perturbação no éter na geração.</p>";
 
     if (env.DB && id && typeof id === 'string') {
       try { await env.DB.prepare("UPDATE mapas_astrologicos SET analise_ia = ? WHERE id = ?").bind(analise, id).run(); }
       catch { console.log("Erro silencioso ao atualizar análise no banco."); }
     }
 
-    return new Response(JSON.stringify({ success: true, analise }), { headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ success: true, analise }), { headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
   } catch {
-    return new Response(JSON.stringify({ success: false, error: "Falha na comunicação Cósmica." }), { status: 500 });
+    return new Response(JSON.stringify({ success: false, error: "Falha na comunicação Cósmica." }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
   }
 }

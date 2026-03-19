@@ -1,0 +1,154 @@
+export const securityHeaders = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+  "Cross-Origin-Resource-Policy": "same-site"
+} as const;
+
+export interface D1Statement<TFirst = unknown> {
+  bind: (...args: unknown[]) => {
+    first: () => Promise<TFirst>;
+    run: () => Promise<unknown>;
+  };
+}
+
+export interface D1DatabaseLike {
+  prepare: <TFirst = unknown>(query: string) => D1Statement<TFirst>;
+}
+
+export interface RateLimitConfig {
+  route: string;
+  limit: number;
+  windowMs: number;
+}
+
+export interface RateLimitResult {
+  allowed: boolean;
+  limit: number;
+  remaining: number;
+  resetAt: number;
+  retryAfter?: number;
+}
+
+interface RateLimitRow {
+  request_count: number;
+  window_start: number;
+}
+
+export const isAllowedLcvOrigin = (origin: string): boolean => /^https:\/\/([a-z0-9-]+\.)*lcv\.app\.br$/i.test(origin);
+
+export const getCorsHeaders = (
+  request: Request,
+  fallbackOrigin: string,
+  methods = "POST, OPTIONS"
+): Record<string, string> => {
+  const origin = request.headers.get("Origin") || "";
+  const allowOrigin = isAllowedLcvOrigin(origin) ? origin : fallbackOrigin;
+
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": methods,
+    "Access-Control-Allow-Headers": "Content-Type"
+  };
+};
+
+export const hasDisallowedOrigin = (request: Request): boolean => {
+  const origin = request.headers.get("Origin");
+  return !!origin && !isAllowedLcvOrigin(origin);
+};
+
+export const getClientIp = (request: Request): string => {
+  const cfIp = request.headers.get("CF-Connecting-IP")?.trim();
+  if (cfIp) return cfIp;
+
+  const forwarded = request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim();
+  if (forwarded) return forwarded;
+
+  return "unknown";
+};
+
+export const rateLimitHeaders = (result: RateLimitResult): Record<string, string> => {
+  const headers: Record<string, string> = {
+    "X-RateLimit-Limit": String(result.limit),
+    "X-RateLimit-Remaining": String(result.remaining),
+    "X-RateLimit-Reset": String(Math.ceil(result.resetAt / 1000))
+  };
+
+  if (typeof result.retryAfter === "number") {
+    headers["Retry-After"] = String(result.retryAfter);
+  }
+
+  return headers;
+};
+
+const toHex = (buffer: ArrayBuffer): string =>
+  Array.from(new Uint8Array(buffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+
+export const sha256Hex = async (value: string): Promise<string> => {
+  const encoded = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", encoded);
+  return toHex(digest);
+};
+
+export const enforceRateLimit = async (
+  db: D1DatabaseLike,
+  request: Request,
+  config: RateLimitConfig
+): Promise<RateLimitResult> => {
+  const now = Date.now();
+  const windowStart = now - (now % config.windowMs);
+  const resetAt = windowStart + config.windowMs;
+  const ip = getClientIp(request);
+  const userAgent = request.headers.get("User-Agent") || "unknown";
+  const keySeed = `${config.route}:${ip}:${userAgent.slice(0, 160)}`;
+  const key = await sha256Hex(keySeed);
+
+  const existing = await db
+    .prepare<RateLimitRow>("SELECT request_count, window_start FROM api_rate_limits WHERE key = ?")
+    .bind(key)
+    .first();
+
+  const row = (existing ?? null) as RateLimitRow | null;
+
+  if (!row || row.window_start !== windowStart) {
+    await db
+      .prepare(
+        "INSERT OR REPLACE INTO api_rate_limits (key, route, window_start, request_count, updated_at) VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)"
+      )
+      .bind(key, config.route, windowStart)
+      .run();
+
+    return {
+      allowed: true,
+      limit: config.limit,
+      remaining: Math.max(config.limit - 1, 0),
+      resetAt
+    };
+  }
+
+  if (row.request_count >= config.limit) {
+    return {
+      allowed: false,
+      limit: config.limit,
+      remaining: 0,
+      resetAt,
+      retryAfter: Math.max(Math.ceil((resetAt - now) / 1000), 1)
+    };
+  }
+
+  const nextCount = row.request_count + 1;
+  await db
+    .prepare("UPDATE api_rate_limits SET request_count = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?")
+    .bind(nextCount, key)
+    .run();
+
+  return {
+    allowed: true,
+    limit: config.limit,
+    remaining: Math.max(config.limit - nextCount, 0),
+    resetAt
+  };
+};

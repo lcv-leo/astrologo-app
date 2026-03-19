@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNotification } from './components/Notification';
 import { Database, RefreshCw, Trash2, Star, Sun, Moon, Sparkles, Wind, Hash, BrainCircuit, Mail, Share2, Copy, Send } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 const ADMIN_VERSION = "2.13.0";
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
+const sanitizeRichHtml = (html: string): string => DOMPurify.sanitize(html, {
+  ALLOWED_TAGS: ['p', 'strong', 'ul', 'li', 'em', 'b', 'i', 'h1', 'h2', 'h3', 'br'],
+  ALLOWED_ATTR: []
+});
 
 interface AstroData { astro: string; signo: string; simbolo: string; }
 interface UmbandaData { posicao: string; orixa: string; simbolo: string; }
@@ -34,7 +42,7 @@ const GlassConfirm: React.FC<{ config: ConfirmConfig; onConfirm: (id: string) =>
   if (!config.show) return null;
   return (
     <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white/95 backdrop-blur-2xl border border-blue-200 p-6 md:p-8 rounded-[2rem] max-w-sm w-full shadow-2xl relative text-center">
+      <div className="md3-glass bg-white/95 backdrop-blur-2xl border border-blue-200 p-6 md:p-8 rounded-[2rem] max-w-sm w-full shadow-2xl relative text-center">
         <div className="mx-auto bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mb-5"><Trash2 className="w-8 h-8 text-red-600" /></div>
         <h2 className="text-xl md:text-2xl font-black text-slate-800 mb-2">Atenção Crítica</h2>
         <p className="text-slate-600 text-sm md:text-base mb-8 leading-relaxed">Você está prestes a expurgar o registro de <br /><strong>{config.nome}</strong>. Esta ação não poderá ser desfeita.</p>
@@ -52,13 +60,13 @@ const EmailModal: React.FC<EmailModalProps> = ({ isOpen, onClose, onSend, isSend
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-white/90 backdrop-blur-2xl border border-white p-6 md:p-8 rounded-3xl max-w-md w-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] relative">
+      <div className="md3-glass bg-white/90 backdrop-blur-2xl border border-white p-6 md:p-8 rounded-3xl max-w-md w-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] relative">
         <button onClick={onClose} disabled={isSending} aria-label="Fechar Modal E-mail" title="Fechar" className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition disabled:opacity-50"><Trash2 className="w-5 h-5 text-slate-600" /></button>
         <h2 className="text-xl md:text-2xl font-black text-blue-600 flex items-center gap-3 mb-4"><Mail className="w-6 h-6" /> Enviar Dossiê Celestial</h2>
         <p className="text-slate-600 text-sm md:text-base mb-6 leading-relaxed">Insira o endereço de e-mail para receber o relatório astrológico completo e a análise da IA.</p>
         <label htmlFor="emailConsulente" className="sr-only">Endereço de E-mail</label>
         <input type="email" id="emailConsulente" placeholder="usuario@email.com" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition shadow-inner mb-6 text-base" value={email} onChange={e => setEmail(e.target.value)} disabled={isSending} />
-        <button onClick={() => { if (email.includes('@')) onSend(email); }} disabled={isSending || !email.includes('@')} aria-label="Disparar E-mail" className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold p-4 rounded-xl flex justify-center items-center gap-3 transition-all disabled:opacity-50 uppercase tracking-wider shadow-md text-sm md:text-base">
+        <button onClick={() => { if (isValidEmail(email)) onSend(email.trim()); }} disabled={isSending || !isValidEmail(email)} aria-label="Disparar E-mail" className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold p-4 rounded-xl flex justify-center items-center gap-3 transition-all disabled:opacity-50 uppercase tracking-wider shadow-md text-sm md:text-base">
           {isSending ? <Sparkles className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />} {isSending ? 'Transmitindo...' : 'Disparar E-mail'}
         </button>
       </div>
@@ -124,7 +132,7 @@ const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa }) => {
       {analiseIa && (
         <div className="mt-8 p-5 md:p-10 bg-white/80 backdrop-blur-2xl rounded-3xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-8 duration-500 w-full overflow-hidden">
           <h3 className="text-base md:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600 mb-5 md:mb-6 border-b border-slate-200 pb-3 flex items-center gap-2"><BrainCircuit className="text-blue-600 w-4 h-4 md:w-5 md:h-5 flex-shrink-0" /> Síntese do Mestre (IA)</h3>
-          <div className="text-slate-700 text-xs md:text-sm lg:text-base leading-relaxed md:leading-loose space-y-3 [&_p]:text-justify [&_p]:indent-8 [&_p]:mb-3 [&_strong]:text-slate-900 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1 [&_li]:text-justify [&_h1]:text-base [&_h1]:text-left [&_h1]:font-bold [&_h1]:mb-3 [&_h1]:text-indigo-700 [&_h2]:text-sm [&_h2]:text-left [&_h2]:font-bold [&_h2]:mb-2 [&_h2]:text-indigo-700 [&_h3]:text-xs [&_h3]:text-left [&_h3]:font-bold [&_h3]:mb-2 [&_h3]:text-blue-600" dangerouslySetInnerHTML={{ __html: analiseIa }} />
+          <div className="text-slate-700 text-xs md:text-sm lg:text-base leading-relaxed md:leading-loose space-y-3 [&_p]:text-justify [&_p]:indent-8 [&_p]:mb-3 [&_strong]:text-slate-900 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1 [&_li]:text-justify [&_h1]:text-base [&_h1]:text-left [&_h1]:font-bold [&_h1]:mb-3 [&_h1]:text-indigo-700 [&_h2]:text-sm [&_h2]:text-left [&_h2]:font-bold [&_h2]:mb-2 [&_h2]:text-indigo-700 [&_h3]:text-xs [&_h3]:text-left [&_h3]:font-bold [&_h3]:mb-2 [&_h3]:text-blue-600" dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(analiseIa) }} />
         </div>
       )}
     </div>
@@ -298,6 +306,8 @@ export default function App() {
             </div>
         `;
     };
+    const analiseSanitizada = selectedMap?.analiseIa ? sanitizeRichHtml(selectedMap.analiseIa) : '';
+
     const h = `
     <!DOCTYPE html>
     <html lang="pt-br">
@@ -350,10 +360,10 @@ export default function App() {
               </div>
             </div>
             ${renderBlocoAstrologicoEmail("Módulo II: Astronômico Constelacional", selectedMap.dadosAstronomica.astrologia, selectedMap.dadosAstronomica.umbanda, false)}
-            ${selectedMap.analiseIa ? `
+            ${analiseSanitizada ? `
             <div style="margin-top: 60px; padding: 40px; background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border-radius: 24px; border: 1px solid #ffffff; ${boxShadow}">
                 <h3 style="font-size: 28px; font-weight: 900; color: transparent; background-clip: text; -webkit-background-clip: text; background-image: linear-gradient(to right, #3b82f6, #4f46e5); margin: 0 0 24px 0; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">🧠 Síntese do Mestre (IA)</h3>
-                <div style="font-size: 16px; line-height: 1.7; color: #334155;">${selectedMap.analiseIa}</div>
+              <div style="font-size: 16px; line-height: 1.7; color: #334155;">${analiseSanitizada}</div>
             </div>
             ` : ''}
             <footer style="text-align: center; margin-top: 60px; padding-top: 20px; border-top: 1px solid #dde4ee;">
@@ -398,7 +408,7 @@ export default function App() {
           </div>
         ) : (
           <div className="w-full flex flex-col items-center max-w-5xl animate-in fade-in">
-            <div className="w-full lg:w-max min-w-[50%] max-w-full overflow-x-auto bg-white/80 backdrop-blur-2xl border border-white rounded-[2.5rem] mb-8 shadow-[0_8px_32px_rgba(0,0,0,0.08)] flex flex-col mx-auto">
+            <div className="md3-glass w-full lg:w-max min-w-[50%] max-w-full overflow-x-auto bg-white/80 backdrop-blur-2xl border border-white rounded-[2.5rem] mb-8 shadow-[0_8px_32px_rgba(0,0,0,0.08)] flex flex-col mx-auto">
 
               {/* O BOTÃO DE ATUALIZAR REALOCADO PARA O CABEÇALHO */}
               <div className="bg-blue-50/80 p-4 md:p-5 px-6 border-b border-blue-100 flex items-center justify-between shadow-sm gap-4">

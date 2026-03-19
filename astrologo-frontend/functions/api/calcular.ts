@@ -1,13 +1,56 @@
-interface EnvBindings { GEMINI_API_KEY: string; DB: { prepare: (query: string) => { bind: (...args: unknown[]) => { run: () => Promise<void> } } }; }
+import { calcExpressionNumber, getJulianDate, isValidDateString, isValidTimeString, reduceNum, toHourMinute, wrapDegrees, type AstroInfo } from './_shared/astroCore';
+import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, rateLimitHeaders, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
+
+interface EnvBindings { GEMINI_API_KEY: string; DB: D1DatabaseLike; }
 interface Context { request: Request; env: EnvBindings; }
-interface AstroInfo { nome: string; decanato: number; }
+
+const RATE_LIMIT = { route: 'calcular', limit: 10, windowMs: 10 * 60 * 1000 };
+
+export async function onRequestOptions(context: Context) {
+    return new Response(null, { headers: { ...getCorsHeaders(context.request, 'https://mapa-astral.lcv.app.br'), ...securityHeaders } });
+}
 
 export async function onRequestPost(context: Context) {
     const { request, env } = context;
+    const corsHeaders = getCorsHeaders(request, 'https://mapa-astral.lcv.app.br');
+
+    if (hasDisallowedOrigin(request)) {
+        return new Response(JSON.stringify({ success: false, error: "Origem não permitida." }), {
+            status: 403,
+            headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
+        });
+    }
+
+    const rateLimit = await enforceRateLimit(env.DB, request, RATE_LIMIT);
+    const limitHeaders = rateLimitHeaders(rateLimit);
+
+    if (!rateLimit.allowed) {
+        return new Response(JSON.stringify({ success: false, error: "Muitas consultas em pouco tempo. Aguarde um pouco antes de tentar novamente." }), {
+            status: 429,
+            headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+        });
+    }
 
     try {
         const payload = await request.json() as Record<string, string>;
-        const { nome, dataNascimento, horaNascimento, localNascimento } = payload;
+        const nome = String(payload.nome ?? '').trim();
+        const dataNascimento = String(payload.dataNascimento ?? '').trim();
+        const horaNascimento = String(payload.horaNascimento ?? '').trim();
+        const localNascimento = String(payload.localNascimento ?? '').trim();
+
+        if (!nome || nome.length < 2 || nome.length > 120) {
+            return new Response(JSON.stringify({ success: false, error: "Nome inválido." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
+        }
+        if (!isValidDateString(dataNascimento)) {
+            return new Response(JSON.stringify({ success: false, error: "Data de nascimento inválida." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
+        }
+        if (!isValidTimeString(horaNascimento)) {
+            return new Response(JSON.stringify({ success: false, error: "Hora de nascimento inválida." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
+        }
+        if (!localNascimento || localNascimento.length < 2 || localNascimento.length > 160) {
+            return new Response(JSON.stringify({ success: false, error: "Local de nascimento inválido." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
+        }
+
         const tz = -3;
 
         const prompt = `Retorne APENAS um JSON com lat, lon, sunrise e sunset de "${localNascimento}" no dia ${dataNascimento} considerando o fuso horário oficial de Brasília (UTC-3). Ex: {"lat":-22.9068,"lon":-43.1729,"sunrise":"06:05","sunset":"18:15"}`;
@@ -25,11 +68,16 @@ export async function onRequestPost(context: Context) {
             const jsonText = parts?.[0]?.text || "{}";
             const match = jsonText.match(/\{[\s\S]*\}/);
             if (match) {
-                const geo = JSON.parse(match[0]) as Record<string, string | number>;
-                lat = typeof geo.lat === 'string' ? parseFloat(geo.lat) : Number(geo.lat) || lat;
-                lon = typeof geo.lon === 'string' ? parseFloat(geo.lon) : Number(geo.lon) || lon;
-                const srSplit = (String(geo.sunrise || "06:05")).split(':').map(Number); srH = srSplit[0]; srM = srSplit[1];
-                const ssSplit = (String(geo.sunset || "18:00")).split(':').map(Number); ssH = ssSplit[0]; ssM = ssSplit[1];
+                try {
+                    const geo = JSON.parse(match[0]) as Record<string, string | number>;
+                    lat = typeof geo.lat === 'string' ? parseFloat(geo.lat) : Number(geo.lat) || lat;
+                    lon = typeof geo.lon === 'string' ? parseFloat(geo.lon) : Number(geo.lon) || lon;
+
+                    [srH, srM] = toHourMinute(String(geo.sunrise || "06:05"), 6, 5);
+                    [ssH, ssM] = toHourMinute(String(geo.sunset || "18:00"), 18, 0);
+                } catch {
+                    console.log("JSON de geolocalização inválido. Mantendo fallback seguro.");
+                }
             }
         } catch { console.log("Usando Fallback Geográfico (RJ)."); }
 
@@ -39,38 +87,30 @@ export async function onRequestPost(context: Context) {
         let utcHour = hLocal - tz; let utcDay = dia;
         if (utcHour >= 24) { utcHour -= 24; utcDay += 1; } else if (utcHour < 0) { utcHour += 24; utcDay -= 1; }
 
-        const getJd = (y: number, m: number, d: number, h: number, min: number) => {
-            let year = y; let month = m;
-            if (month <= 2) { year -= 1; month += 12; }
-            const A = Math.floor(year / 100); const B = 2 - A + Math.floor(A / 4);
-            return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + d + (h + min / 60) / 24 + B - 1524.5;
-        };
-
-        const j_date = getJd(ano, mes, utcDay, utcHour, mLocal);
+        const j_date = getJulianDate(ano, mes, utcDay, utcHour, mLocal);
         const T = (j_date - 2451545.0) / 36525.0;
-        const wrap = (deg: number) => (deg % 360 + 360) % 360;
         const rad = Math.PI / 180;
 
-        const L0 = wrap(280.46646 + 36000.76983 * T);
-        const M = wrap(357.52911 + 35999.05029 * T);
-        const sunLon = wrap(L0 + 1.914602 * Math.sin(M * rad) + 0.019993 * Math.sin(2 * M * rad));
+        const L0 = wrapDegrees(280.46646 + 36000.76983 * T);
+        const M = wrapDegrees(357.52911 + 35999.05029 * T);
+        const sunLon = wrapDegrees(L0 + 1.914602 * Math.sin(M * rad) + 0.019993 * Math.sin(2 * M * rad));
 
-        const L_moon = wrap(218.316 + 481267.881 * T);
-        const D = wrap(297.850 + 445267.111 * T);
-        const M_moon = wrap(134.963 + 477198.867 * T);
-        const moonLon = wrap(L_moon + 6.289 * Math.sin(M_moon * rad) - 1.274 * Math.sin((M_moon - 2 * D) * rad));
+        const L_moon = wrapDegrees(218.316 + 481267.881 * T);
+        const D = wrapDegrees(297.850 + 445267.111 * T);
+        const M_moon = wrapDegrees(134.963 + 477198.867 * T);
+        const moonLon = wrapDegrees(L_moon + 6.289 * Math.sin(M_moon * rad) - 1.274 * Math.sin((M_moon - 2 * D) * rad));
 
-        const th0 = wrap(280.46061837 + 360.98564736629 * (j_date - 2451545.0) + 0.000387933 * T * T);
-        const local_sidereal = wrap(th0 + lon);
+        const th0 = wrapDegrees(280.46061837 + 360.98564736629 * (j_date - 2451545.0) + 0.000387933 * T * T);
+        const local_sidereal = wrapDegrees(th0 + lon);
         const eps = 23.43929111 - 0.013004167 * T;
 
-        const mcLon = wrap(Math.atan2(Math.sin(local_sidereal * rad), Math.cos(local_sidereal * rad) * Math.cos(eps * rad)) / rad);
-        const ascLon = wrap(Math.atan2(Math.cos(local_sidereal * rad), -(Math.sin(local_sidereal * rad) * Math.cos(eps * rad) + Math.tan(lat * rad) * Math.sin(eps * rad))) / rad);
+        const mcLon = wrapDegrees(Math.atan2(Math.sin(local_sidereal * rad), Math.cos(local_sidereal * rad) * Math.cos(eps * rad)) / rad);
+        const ascLon = wrapDegrees(Math.atan2(Math.cos(local_sidereal * rad), -(Math.sin(local_sidereal * rad) * Math.cos(eps * rad) + Math.tan(lat * rad) * Math.sin(eps * rad))) / rad);
 
         const signosTropicais = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem", "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"];
         const getTropicalInfo = (lonVal: number): AstroInfo => {
-            const idx = Math.floor(wrap(lonVal) / 30);
-            const decanato = Math.floor((wrap(lonVal) % 30) / 10);
+            const idx = Math.floor(wrapDegrees(lonVal) / 30);
+            const decanato = Math.floor((wrapDegrees(lonVal) % 30) / 10);
             return { nome: signosTropicais[idx], decanato: decanato > 2 ? 2 : decanato };
         };
 
@@ -85,14 +125,14 @@ export async function onRequestPost(context: Context) {
         ];
         const getIauInfo = (tLon: number): AstroInfo => {
             const shift = (ano - 2000) * (50.29 / 3600);
-            const j2000Lon = wrap(tLon - shift);
+            const j2000Lon = wrapDegrees(tLon - shift);
             let found = IAU_BORDERS[0];
             for (const b of IAU_BORDERS) {
                 if (b.inicio > b.fim) { if (j2000Lon >= b.inicio || j2000Lon < b.fim) { found = b; break; } }
                 else { if (j2000Lon >= b.inicio && j2000Lon < b.fim) { found = b; break; } }
             }
-            const width = wrap(found.fim - found.inicio) || 360;
-            const progress = wrap(j2000Lon - found.inicio);
+            const width = wrapDegrees(found.fim - found.inicio) || 360;
+            const progress = wrapDegrees(j2000Lon - found.inicio);
             let decanIndex = Math.floor((progress / width) * 3);
             if (decanIndex > 2) decanIndex = 2;
             return { nome: found.nome, decanato: decanIndex };
@@ -179,22 +219,7 @@ export async function onRequestPost(context: Context) {
         const mainIdx = Math.floor(minsFromSunrise / 24) % 5;
         const subIdx = (mainIdx + Math.floor((minsFromSunrise % 24) / 4.8)) % 5;
 
-        const reduceNum = (n: number | string) => {
-            let sum = String(n).replace(/\D/g, '').split('').reduce((a, b) => a + parseInt(b, 10), 0);
-            while (sum > 9 && ![11, 22, 33].includes(sum)) sum = sum.toString().split('').reduce((a, b) => a + parseInt(b, 10), 0);
-            return sum;
-        };
-        const calcExp = (str: string) => {
-            let sum = 0; const map: Record<string, number> = { a: 1, j: 1, s: 1, b: 2, k: 2, t: 2, c: 3, l: 3, u: 3, d: 4, m: 4, v: 4, e: 5, n: 5, w: 5, f: 6, o: 6, x: 6, g: 7, p: 7, y: 7, h: 8, q: 8, z: 8, i: 9, r: 9 };
-            str.toLowerCase().normalize("NFD").replace(/[^a-z\s]/g, "").split(/\s+/).forEach(w => {
-                let wSum = 0;
-                for (const char of w) if (map[char]) wSum += map[char];
-                sum += reduceNum(wSum);
-            });
-            return reduceNum(sum);
-        };
-
-        const dadosGlobais = { tatwa: { principal: tattwas[mainIdx], sub: tattwas[subIdx] }, numerologia: { expressao: calcExp(nome), caminhoVida: reduceNum(dataNascimento), vibracaoHora: reduceNum(horaNascimento) } };
+        const dadosGlobais = { tatwa: { principal: tattwas[mainIdx], sub: tattwas[subIdx] }, numerologia: { expressao: calcExpressionNumber(nome), caminhoVida: reduceNum(dataNascimento), vibracaoHora: reduceNum(horaNascimento) } };
         const dadosAstronomica = gerarDadosSistema(getIauInfo(sunLon), getIauInfo(moonLon), getIauInfo(ascLon), getIauInfo(mcLon));
         const dadosTropical = gerarDadosSistema(getTropicalInfo(sunLon), getTropicalInfo(moonLon), getTropicalInfo(ascLon), getTropicalInfo(mcLon));
 
@@ -206,9 +231,9 @@ export async function onRequestPost(context: Context) {
             }
         } catch { console.error("Falha ao gravar no BD."); }
 
-        return new Response(JSON.stringify({ success: true, id: idUnico, dadosGlobais, dadosAstronomica, dadosTropical, query: { nome, dataNascimento, horaNascimento, localNascimento } }), { headers: { "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ success: true, id: idUnico, dadosGlobais, dadosAstronomica, dadosTropical, query: { nome, dataNascimento, horaNascimento, localNascimento } }), { headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
 
     } catch (error) {
-        return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }), { status: 500 });
+        return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
     }
 }

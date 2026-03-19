@@ -1,5 +1,6 @@
 
-import { createContext, useContext, useState, useRef, type ReactNode } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import './Notification.css';
 
 interface Notification {
@@ -24,24 +25,68 @@ export const useNotification = () => {
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isMobile, setIsMobile] = useState<boolean>(() => (typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false));
   const notificationId = useRef(0);
+  const timeoutMap = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const maxNotifications = 4;
 
-  const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+  const removeNotification = useCallback((id: number) => {
+    const timeoutRef = timeoutMap.current.get(id);
+    if (timeoutRef) {
+      clearTimeout(timeoutRef);
+      timeoutMap.current.delete(id);
+    }
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  }, []);
+
+  const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = notificationId.current++;
     const newNotification: Notification = { id, message, type };
-    setNotifications(prev => [...prev, newNotification]);
-    setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    }, 5000);
-  };
+
+    setNotifications(prev => {
+      const next = [...prev, newNotification];
+      if (next.length <= maxNotifications) return next;
+      const [oldest, ...rest] = next;
+      const oldTimeout = timeoutMap.current.get(oldest.id);
+      if (oldTimeout) {
+        clearTimeout(oldTimeout);
+        timeoutMap.current.delete(oldest.id);
+      }
+      return rest;
+    });
+
+    const timeout = setTimeout(() => removeNotification(id), 5000);
+    timeoutMap.current.set(id, timeout);
+  }, [removeNotification]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const media = window.matchMedia('(max-width: 768px)');
+    const handleChange = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+
+    media.addEventListener('change', handleChange);
+    return () => media.removeEventListener('change', handleChange);
+  }, []);
 
   return (
     <NotificationContext.Provider value={{ showNotification }}>
       {children}
-      <div className="notification-container">
+      <div className={`notification-container ${isMobile ? 'notification-container-mobile' : 'notification-container-desktop'}`} role="status" aria-live="polite" aria-atomic="false">
         {notifications.map(notification => (
           <div key={notification.id} className={`notification notification-${notification.type}`}>
-            {notification.message}
+            <div className="notification-body">
+              <span className="notification-message">{notification.message}</span>
+              <button
+                type="button"
+                className="notification-close"
+                onClick={() => removeNotification(notification.id)}
+                aria-label="Fechar notificação"
+              >
+                ×
+              </button>
+            </div>
+            <span className="notification-progress" />
           </div>
         ))}
       </div>

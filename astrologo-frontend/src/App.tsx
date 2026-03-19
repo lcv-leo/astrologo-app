@@ -1,8 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Compass, Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, Info, Star, MapPin, User, Calendar, Clock, X, HelpCircle, Mail, Send, RotateCcw } from 'lucide-react';
 import { useNotification } from './components/Notification';
+import DOMPurify from 'dompurify';
 
 const APP_VERSION = "2.13.00";
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
+const sanitizeRichHtml = (html: string): string => DOMPurify.sanitize(html, {
+  ALLOWED_TAGS: ['p', 'strong', 'ul', 'li', 'em', 'b', 'i', 'h1', 'h2', 'h3', 'br'],
+  ALLOWED_ATTR: []
+});
 
 interface AstroData { astro: string; signo: string; simbolo: string; }
 interface UmbandaData { posicao: string; orixa: string; simbolo: string; }
@@ -44,7 +52,7 @@ const InfoModal: React.FC<ModalProps> = ({ type, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300">
-      <div className={`bg-white/90 backdrop-blur-2xl border ${content.borderColor} p-6 md:p-8 rounded-3xl max-w-2xl w-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] relative overflow-y-auto max-h-[90vh]`}>
+      <div className={`md3-glass bg-white/90 backdrop-blur-2xl border ${content.borderColor} p-6 md:p-8 rounded-3xl max-w-2xl w-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] relative overflow-y-auto max-h-[90vh]`}>
         <button onClick={onClose} aria-label="Fechar Modal" title="Fechar Modal" className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition"><X className="w-5 h-5 text-slate-600" /></button>
         <h2 className={`text-2xl md:text-3xl font-black ${content.titleColor} flex items-center gap-3 mb-6 border-b border-slate-200 pb-4`}>{content.icon} {content.titulo}</h2>
         <div className="text-slate-700 text-sm md:text-base leading-relaxed space-y-4 [&_p]:text-justify" dangerouslySetInnerHTML={{ __html: content.texto }} />
@@ -59,13 +67,13 @@ const EmailModal: React.FC<EmailModalProps> = ({ isOpen, onClose, onSend, isSend
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-white/90 backdrop-blur-2xl border border-white p-6 md:p-8 rounded-3xl max-w-md w-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] relative">
+      <div className="md3-glass bg-white/90 backdrop-blur-2xl border border-white p-6 md:p-8 rounded-3xl max-w-md w-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] relative">
         <button onClick={onClose} disabled={isSending} aria-label="Fechar Modal E-mail" title="Fechar" className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition disabled:opacity-50"><X className="w-5 h-5 text-slate-600" /></button>
         <h2 className="text-xl md:text-2xl font-black text-blue-600 flex items-center gap-3 mb-4"><Mail className="w-6 h-6" /> Enviar Dossiê Celestial</h2>
         <p className="text-slate-600 text-sm md:text-base mb-6 leading-relaxed">Insira o endereço de e-mail para receber o relatório astrológico completo e a análise da IA.</p>
         <label htmlFor="emailConsulente" className="sr-only">Endereço de E-mail</label>
         <input type="email" id="emailConsulente" placeholder="usuario@email.com" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition shadow-inner mb-6 text-base" value={email} onChange={e => setEmail(e.target.value)} disabled={isSending} />
-        <button onClick={() => { if (email.includes('@')) onSend(email); }} disabled={isSending || !email.includes('@')} aria-label="Disparar E-mail" className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold p-4 rounded-xl flex justify-center items-center gap-3 transition-all disabled:opacity-50 uppercase tracking-wider shadow-md text-sm md:text-base">
+        <button onClick={() => { if (isValidEmail(email)) onSend(email.trim()); }} disabled={isSending || !isValidEmail(email)} aria-label="Disparar E-mail" className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold p-4 rounded-xl flex justify-center items-center gap-3 transition-all disabled:opacity-50 uppercase tracking-wider shadow-md text-sm md:text-base">
           {isSending ? <Sparkles className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />} {isSending ? 'Transmitindo...' : 'Disparar E-mail'}
         </button>
       </div>
@@ -270,6 +278,8 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
         `;
     };
 
+    const analiseSanitizada = analiseIa ? sanitizeRichHtml(analiseIa) : '';
+
     const h = `
     <!DOCTYPE html>
     <html lang="pt-br">
@@ -329,10 +339,10 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
 
             ${renderBlocoAstrologicoEmail("Módulo II: Astronômico Constelacional", result.dadosAstronomica.astrologia, result.dadosAstronomica.umbanda, false)}
 
-            ${analiseIa ? `
+            ${analiseSanitizada ? `
             <div style="margin-top: 60px; padding: 40px; background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border-radius: 24px; border: 1px solid #ffffff; ${boxShadow}">
                 <h3 style="font-size: 28px; font-weight: 900; color: transparent; background-clip: text; -webkit-background-clip: text; background-image: linear-gradient(to right, #3b82f6, #4f46e5); margin: 0 0 24px 0; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">🧠 Síntese do Mestre (IA)</h3>
-                <div style="font-size: 16px; line-height: 1.7; color: #334155;">${analiseIa}</div>
+              <div style="font-size: 16px; line-height: 1.7; color: #334155;">${analiseSanitizada}</div>
             </div>
             ` : ''}
 
@@ -404,7 +414,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
       {analiseIa && (
         <div className="mt-10 p-6 md:p-12 bg-white/80 backdrop-blur-2xl rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-8 duration-500 w-full overflow-hidden">
           <h3 className="text-xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600 mb-6 md:mb-8 border-b border-slate-200 pb-4 flex items-center gap-3"><BrainCircuit className="text-blue-600 w-6 h-6 md:w-8 md:h-8 flex-shrink-0" /> Síntese do Mestre (IA)</h3>
-          <div className="text-slate-700 text-sm md:text-base lg:text-lg leading-relaxed md:leading-loose space-y-4 [&_p]:text-justify [&_p]:indent-8 [&_p]:mb-4 [&_strong]:text-slate-900 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-2 [&_li]:text-justify [&_h1]:text-2xl [&_h1]:text-left [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:text-indigo-700 [&_h2]:text-xl [&_h2]:text-left [&_h2]:font-bold [&_h2]:mb-3 [&_h2]:text-indigo-700 [&_h3]:text-lg [&_h3]:text-left [&_h3]:font-bold [&_h3]:mb-2 [&_h3]:text-blue-600" dangerouslySetInnerHTML={{ __html: analiseIa }} />
+          <div className="text-slate-700 text-sm md:text-base lg:text-lg leading-relaxed md:leading-loose space-y-4 [&_p]:text-justify [&_p]:indent-8 [&_p]:mb-4 [&_strong]:text-slate-900 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-2 [&_li]:text-justify [&_h1]:text-2xl [&_h1]:text-left [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:text-indigo-700 [&_h2]:text-xl [&_h2]:text-left [&_h2]:font-bold [&_h2]:mb-3 [&_h2]:text-indigo-700 [&_h3]:text-lg [&_h3]:text-left [&_h3]:font-bold [&_h3]:mb-2 [&_h3]:text-blue-600" dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(analiseIa) }} />
         </div>
       )}
     </div>
@@ -456,7 +466,7 @@ export default function App() {
           <p className="text-slate-600 text-sm md:text-lg font-medium tracking-wide text-balance">Umbanda Esotérica da Raiz de Guiné <span className="text-slate-400 text-[10px] md:text-sm font-normal">(W. W. da Matta e Silva)</span></p>
         </header>
 
-        <form onSubmit={calcularMapa} className={`bg-white/60 backdrop-blur-2xl p-6 md:p-10 rounded-[2.5rem] border border-white shadow-[0_8px_32px_rgba(0,0,0,0.08)] w-full grid md:grid-cols-2 gap-5 md:gap-8 max-w-4xl ${result ? 'mb-8' : ''}`}>
+        <form onSubmit={calcularMapa} className={`md3-glass bg-white/60 backdrop-blur-2xl p-6 md:p-10 rounded-[2.5rem] border border-white shadow-[0_8px_32px_rgba(0,0,0,0.08)] w-full grid md:grid-cols-2 gap-5 md:gap-8 max-w-4xl ${result ? 'mb-8' : ''}`}>
           <div className="flex flex-col gap-2 w-full">
             <label htmlFor="nomeConsulente" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><User className="w-4 h-4 text-blue-500" /> NOME COMPLETO</label>
             <input id="nomeConsulente" required type="text" aria-label="Nome Completo" title="Nome Completo" placeholder="Ex: João da Silva" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium" value={formData.nome} onChange={e => setFormData({ ...formData, nome: e.target.value })} />

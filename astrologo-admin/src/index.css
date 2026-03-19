@@ -1,12 +1,53 @@
 @import "tailwindcss";
 
+:root {
+  --md3-primary: #2563eb;
+  --md3-on-primary: #ffffff;
+  --md3-secondary: #475569;
+  --md3-tertiary: #4f46e5;
+  --md3-surface: #f8fafc;
+  --md3-surface-container: rgba(255, 255, 255, 0.64);
+  --md3-outline: rgba(255, 255, 255, 0.7);
+  --md3-shadow: 0 10px 30px rgba(37, 99, 235, 0.14);
+  --md3-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
 html,
 body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-  background-color: #f8fafc;
+  background:
+    radial-gradient(110% 85% at 12% 0%, rgba(37, 99, 235, 0.14) 0%, rgba(248, 250, 252, 0) 40%),
+    radial-gradient(115% 95% at 100% 100%, rgba(99, 102, 241, 0.1) 0%, rgba(248, 250, 252, 0) 56%),
+    var(--md3-surface);
   color: #1e293b;
+  font-feature-settings: 'ss01' on, 'cv01' on;
+}
+
+#root {
+  isolation: isolate;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.2);
+}
+
+.md3-glass {
+  background: var(--md3-surface-container);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--md3-outline);
+  box-shadow: var(--md3-shadow);
+  transition: all 220ms var(--md3-ease);
+}
+
+.md3-glass:hover {
+  box-shadow: 0 14px 42px rgba(37, 99, 235, 0.2);
 }
 
 ::-webkit-scrollbar {
