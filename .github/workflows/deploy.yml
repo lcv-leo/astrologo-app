@@ -37,7 +37,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         # Chama diretamente a CLI mais moderna, enviando para a branch 'production' da Cloudflare
-        run: npx wrangler@latest pages deploy dist --project-name astrologo-frontend --branch production
+        run: npx wrangler@latest pages deploy dist --project-name astrologo-frontend --branch production --commit-dirty=true
 
       - name: Install Admin Dependencies
         working-directory: ./astrologo-admin
@@ -53,4 +53,4 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         # Chama diretamente a CLI mais moderna, enviando para a branch 'production' da Cloudflare
-        run: npx wrangler@latest pages deploy dist --project-name astrologo-admin --branch production
+        run: npx wrangler@latest pages deploy dist --project-name astrologo-admin --branch production --commit-dirty=true
