@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Compass, Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, Info, Star, MapPin, User, Calendar, Clock, X, HelpCircle, Mail, Send } from 'lucide-react';
 
-const APP_VERSION = "2.05.00";
+const APP_VERSION = "2.07.00";
 
 interface AstroData { astro: string; signo: string; simbolo: string; }
 interface UmbandaData { posicao: string; orixa: string; simbolo: string; }
@@ -14,7 +14,7 @@ interface AutocompleteProps { value: string; onChange: (v: string) => void; }
 interface BlocoProps { titulo: string; dadosAstrologia: AstroData[]; dadosUmbanda: UmbandaData[]; icon: React.ElementType; isTropical: boolean; onInfoClick: () => void; }
 interface ResultViewProps { result: ResultData; analiseIa: string; onSolicitarAnalise?: () => void; loadingAi?: boolean; openInfoModal: (t: 'astronomica' | 'tropical') => void; }
 
-const formatarData = (dataStr: string) => {
+const formatarData = (dataStr: string): string => {
   if (!dataStr) return ''; const p = dataStr.split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : dataStr;
 };
 
@@ -60,14 +60,17 @@ const EmailModal: React.FC<EmailModalProps> = ({ isOpen, onClose, onSend, isSend
 };
 
 const LocationAutocomplete: React.FC<AutocompleteProps> = ({ value, onChange }) => {
-  const [query, setQuery] = useState(''); const [suggestions, setSuggestions] = useState<Array<Record<string, string>>>([]);
-  const [isOpen, setIsOpen] = useState(false); const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<Array<Record<string, string>>>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setQuery(value); }, [value]);
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => { if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setIsOpen(false); };
-    document.addEventListener('mousedown', handleClickOutside); return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,9 +78,20 @@ const LocationAutocomplete: React.FC<AutocompleteProps> = ({ value, onChange }) 
     if (val.length < 3) { setSuggestions([]); setIsOpen(false); return; }
     setLoading(true); const searchQuery = val.split(',')[0].trim();
     fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchQuery)}&count=5&language=pt&format=json`)
-      .then(res => res.json()).then(data => { const d = data as { results?: Array<Record<string, string>> }; setSuggestions(d.results || []); if (d.results && d.results.length > 0) setIsOpen(true); }).finally(() => setLoading(false));
+      .then(res => res.json())
+      .then(data => {
+        const d = data as { results?: Array<Record<string, string>> };
+        setSuggestions(d.results || []);
+        if (d.results && d.results.length > 0) setIsOpen(true);
+      })
+      .finally(() => setLoading(false));
   };
-  const handleSelect = (s: Record<string, string>) => { const locName = [s.name, s.admin1, s.country].filter(Boolean).join(', '); setQuery(locName); onChange(locName); setIsOpen(false); };
+
+  const handleSelect = (s: Record<string, string>) => {
+    const locName = [s.name, s.admin1, s.country].filter(Boolean).join(', ');
+    setQuery(locName); onChange(locName); setIsOpen(false);
+  };
+
   return (
     <div className="relative w-full" ref={wrapperRef}>
       <input id="localNascimentoInput" required type="text" placeholder="Ex: Rio de Janeiro, RJ" autoComplete="off" className="w-full p-4 pl-12 bg-white/60 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm backdrop-blur-sm placeholder-slate-400" value={query || value} onChange={handleInputChange} onFocus={() => suggestions.length > 0 && setIsOpen(true)} />
@@ -141,7 +155,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
 
-  const gerarTextoRelatorio = () => {
+  const gerarTextoRelatorio = (): string => {
     let t = `🌌 *DIAGNÓSTICO ASTROLÓGICO E ESOTÉRICO* 🌌\n\n👤 *Consulente:* ${result.query.nome}\n📍 *Local:* ${result.query.localNascimento}\n📅 *Nascimento:* ${formatarData(result.query.dataNascimento)} às ${result.query.horaNascimento}\n\n`;
     t += `🌬️ *FORÇAS GLOBAIS*\n• Tatwa: ${result.dadosGlobais.tatwa.principal} / ${result.dadosGlobais.tatwa.sub}\n• Numerologia: Expressão ${result.dadosGlobais.numerologia.expressao} | Caminho ${result.dadosGlobais.numerologia.caminhoVida} | Hora ${result.dadosGlobais.numerologia.vibracaoHora}\n\n`;
     t += `🌞 *MÓDULO I: TROPICAL SAZONAL (12 Signos)* - A Persona\n☀️ Sol: ${result.dadosTropical.astrologia[0].signo} | ⬆️ Asc: ${result.dadosTropical.astrologia[1].signo} | 🌙 Lua: ${result.dadosTropical.astrologia[2].signo} | 🔭 MC: ${result.dadosTropical.astrologia[3].signo}\n👑 Coroa: ${result.dadosTropical.umbanda[0].orixa} | 🌊 Adjuntó: ${result.dadosTropical.umbanda[1].orixa} | 🏹 Frente: ${result.dadosTropical.umbanda[2].orixa}\n🌟 Decanato: ${result.dadosTropical.umbanda[3].orixa} | ⏳ Faixa (3h): ${result.dadosTropical.umbanda[4].orixa} | 🪐 Astro: ${result.dadosTropical.umbanda[5].orixa}\n\n`;
@@ -154,7 +168,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
     t += `✨ _Gerado via Oráculo Celestial_ ✨`; return t;
   };
 
-  const gerarHtmlRelatorio = () => {
+  const gerarHtmlRelatorio = (): string => {
     let h = `<div style="font-family: sans-serif; color: #1e293b; background-color: #f8fafc; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px;"><h2 style="color: #d97706; text-align: center; text-transform: uppercase;">🌌 Dossiê Astrológico</h2><p style="text-align: center; font-size: 18px; margin-bottom: 5px;"><strong>${result.query.nome}</strong></p><p style="text-align: center; font-size: 14px; color: #64748b; margin-top: 0;">${result.query.localNascimento}<br/>${formatarData(result.query.dataNascimento)} às ${result.query.horaNascimento}</p><h3 style="color: #0ea5e9; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">🌬️ Forças Globais</h3><p><strong>Tatwa Principal:</strong> ${result.dadosGlobais.tatwa.principal} <br/><strong>Sub-tatwa:</strong> ${result.dadosGlobais.tatwa.sub}</p><p><strong>Numerologia:</strong> Expressão ${result.dadosGlobais.numerologia.expressao} | Caminho ${result.dadosGlobais.numerologia.caminhoVida} | Hora ${result.dadosGlobais.numerologia.vibracaoHora}</p>`;
     const extrairHtml = (titulo: string, dados: DadosSistema, cor: string) => {
       return `<h3 style="color: ${cor}; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 25px;">${titulo}</h3><p><strong>Astros:</strong> Sol em ${dados.astrologia[0].signo} | Asc em ${dados.astrologia[1].signo} | Lua em ${dados.astrologia[2].signo} | MC em ${dados.astrologia[3].signo}</p><p><strong>Umbanda:</strong> Coroa: ${dados.umbanda[0].orixa} | Adjuntó: ${dados.umbanda[1].orixa} | Frente: ${dados.umbanda[2].orixa}<br/>Decanato: ${dados.umbanda[3].orixa} | Faixa (3h): ${dados.umbanda[4].orixa} | Astro: ${dados.umbanda[5].orixa}</p>`;
@@ -191,7 +205,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
       <div className="grid md:grid-cols-2 gap-4 md:gap-6 w-full mb-8">
         <div className="bg-white/70 backdrop-blur-2xl p-5 md:p-8 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full flex flex-col justify-center min-w-0">
           <h3 className="text-lg md:text-xl font-bold text-blue-600 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Wind className="text-blue-500 w-5 h-5" /> Forças Globais: Tatwas</h3>
-          <div className="space-y-3"><div className="bg-white/80 p-3 md:p-4 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm"><p className="text-[11px] md:text-xs text-slate-500">Principal</p><p className="font-bold text-slate-800 text-sm md:text-base truncate pl-2">{result.dadosGlobais.tatwa.principal}</p></div><div className="bg-white/80 p-3 md:p-4 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm"><p className="text-[11px] md:text-xs text-slate-500">Sub-tatwa</p><p className="font-bold text-slate-800 text-sm md:text-base truncate pl-2">{result.dadosGlobais.tatwa.sub}</p></div></div>
+          <div className="space-y-3"><div className="bg-white/80 p-3 md:p-4 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm"><p className="text-[11px] md:text-xs text-slate-500">Principal</p><p className="font-bold text-slate-800 text-sm md:text-base truncate pl-2">{String(result.dadosGlobais.tatwa.principal)}</p></div><div className="bg-white/80 p-3 md:p-4 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm"><p className="text-[11px] md:text-xs text-slate-500">Sub-tatwa</p><p className="font-bold text-slate-800 text-sm md:text-base truncate pl-2">{String(result.dadosGlobais.tatwa.sub)}</p></div></div>
         </div>
         <div className="bg-white/70 backdrop-blur-2xl p-5 md:p-8 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full flex flex-col justify-center min-w-0">
           <h3 className="text-lg md:text-xl font-bold text-blue-600 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Hash className="text-blue-500 w-5 h-5" /> Forças Globais: Numerologia</h3>
