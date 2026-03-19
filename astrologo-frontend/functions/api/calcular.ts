@@ -168,7 +168,7 @@ export async function onRequestPost(context: Context) {
                     { posicao: "Frente (3º)", orixa: orixaFrente.toUpperCase(), simbolo: "🏹" },
                     { posicao: `Decanato (${infoSol.decanato + 1}º)`, orixa: orixaDecanato.toUpperCase(), simbolo: "🌟" },
                     { posicao: "FAIXA HORÁRIA (3H)", orixa: orixaHora.toUpperCase(), simbolo: "⏳" },
-                    { posicao: "HORA PLANETÁRIA", orixa: orixaHoraPlanetaria.toUpperCase(), simbolo: planetaSimbolos[planetaRegenteHora] }
+                    { posicao: `HORA PLANETÁRIA (${planetaRegenteHora.toUpperCase()})`, orixa: orixaHoraPlanetaria.toUpperCase(), simbolo: planetaSimbolos[planetaRegenteHora] }
                 ]
             };
         };
