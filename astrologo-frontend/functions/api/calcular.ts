@@ -163,9 +163,12 @@ export async function onRequestPost(context: Context) {
                     { astro: "Lua", signo: infoLua.nome, simbolo: "🌙" }, { astro: "Meio do Céu", signo: infoMc.nome, simbolo: "🔭" }
                 ],
                 umbanda: [
-                    { posicao: "Coroa (1º)", orixa: orixaCoroa.toUpperCase(), simbolo: "👑" }, { posicao: "Adjuntó (2º)", orixa: orixaDia.toUpperCase(), simbolo: "🌊" },
-                    { posicao: "Frente (3º)", orixa: orixaFrente.toUpperCase(), simbolo: "🏹" }, { posicao: `Decanato (${infoSol.decanato + 1}º)`, orixa: orixaDecanato.toUpperCase(), simbolo: "🌟" },
-                    { posicao: "Faixa (3h)", orixa: orixaHora.toUpperCase(), simbolo: "⏳" }, { posicao: `Astro (${planetaRegenteHora})`, orixa: orixaHoraPlanetaria.toUpperCase(), simbolo: planetaSimbolos[planetaRegenteHora] }
+                    { posicao: "Coroa (1º)", orixa: orixaCoroa.toUpperCase(), simbolo: "👑" },
+                    { posicao: "Adjuntó (2º)", orixa: orixaDia.toUpperCase(), simbolo: "🌊" },
+                    { posicao: "Frente (3º)", orixa: orixaFrente.toUpperCase(), simbolo: "🏹" },
+                    { posicao: `Decanato (${infoSol.decanato + 1}º)`, orixa: orixaDecanato.toUpperCase(), simbolo: "🌟" },
+                    { posicao: "FAIXA HORÁRIA (3H)", orixa: orixaHora.toUpperCase(), simbolo: "⏳" },
+                    { posicao: "HORA PLANETÁRIA", orixa: orixaHoraPlanetaria.toUpperCase(), simbolo: planetaSimbolos[planetaRegenteHora] }
                 ]
             };
         };
