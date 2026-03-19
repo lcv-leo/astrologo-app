@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNotification } from './components/Notification';
-import { Database, RefreshCw, Trash2, Star, Sun, Moon, Sparkles, Wind, Hash, BrainCircuit, Mail, Share2, Copy, Send } from 'lucide-react';
+import { Database, RefreshCw, Trash2, Star, Sun, Moon, Sparkles, Wind, Hash, BrainCircuit, Mail, Share2, Copy, Send, ShieldAlert, Save } from 'lucide-react';
 import DOMPurify from 'dompurify';
 
 const ADMIN_VERSION = "2.13.0";
@@ -22,6 +22,19 @@ interface BlocoProps { titulo: string; dadosAstrologia: AstroData[]; dadosUmband
 interface ResultViewProps { result: ResultData; analiseIa: string; }
 interface ConfirmConfig { show: boolean; id: string; nome: string; }
 interface EmailModalProps { isOpen: boolean; onClose: () => void; onSend: (email: string) => void; isSending: boolean; }
+interface RateLimitPolicy { route: 'calcular' | 'analisar' | 'enviar-email'; enabled: boolean; max_requests: number; window_minutes: number; }
+
+const routeLabel: Record<RateLimitPolicy['route'], string> = {
+  calcular: 'Cálculo do Mapa',
+  analisar: 'Síntese da IA',
+  'enviar-email': 'Envio de E-mail'
+};
+
+const defaultPolicies: Record<RateLimitPolicy['route'], Pick<RateLimitPolicy, 'enabled' | 'max_requests' | 'window_minutes'>> = {
+  calcular: { enabled: true, max_requests: 10, window_minutes: 10 },
+  analisar: { enabled: true, max_requests: 6, window_minutes: 15 },
+  'enviar-email': { enabled: true, max_requests: 4, window_minutes: 60 }
+};
 
 const formatarData = (dataStr: string): string => {
   if (!dataStr) return ''; const p = dataStr.split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : dataStr;
@@ -148,6 +161,117 @@ export default function App() {
   const [confirmDialog, setConfirmDialog] = useState<ConfirmConfig>({ show: false, id: '', nome: '' });
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [ratePolicies, setRatePolicies] = useState<RateLimitPolicy[]>([]);
+  const [baselinePolicies, setBaselinePolicies] = useState<RateLimitPolicy[]>([]);
+  const [loadingPolicies, setLoadingPolicies] = useState(false);
+  const [savingPolicies, setSavingPolicies] = useState(false);
+
+  const hasUnsavedPolicies = useMemo(() => {
+    const normalize = (items: RateLimitPolicy[]) => [...items]
+      .sort((a, b) => a.route.localeCompare(b.route))
+      .map((p) => ({
+        route: p.route,
+        enabled: p.enabled,
+        max_requests: Number(p.max_requests),
+        window_minutes: Number(p.window_minutes)
+      }));
+
+    return JSON.stringify(normalize(ratePolicies)) !== JSON.stringify(normalize(baselinePolicies));
+  }, [ratePolicies, baselinePolicies]);
+
+  useEffect(() => {
+    if (!hasUnsavedPolicies) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedPolicies]);
+
+  const carregarPoliticas = useCallback(async (): Promise<void> => {
+    setLoadingPolicies(true);
+    try {
+      const res = await fetch('/api/admin/rate-limit-listar');
+      const data = await res.json() as { success: boolean; policies?: Array<Record<string, unknown>>; error?: string };
+      if (!data.success || !Array.isArray(data.policies)) {
+        throw new Error(data.error || 'Falha ao carregar políticas.');
+      }
+      const parsed = data.policies
+        .map((p) => ({
+          route: String(p.route) as RateLimitPolicy['route'],
+          enabled: Number(p.enabled) !== 0,
+          max_requests: Math.max(1, Number(p.max_requests) || 1),
+          window_minutes: Math.max(1, Number(p.window_minutes) || 1)
+        }))
+        .filter((p) => p.route === 'calcular' || p.route === 'analisar' || p.route === 'enviar-email')
+        .sort((a, b) => {
+          const order: Record<RateLimitPolicy['route'], number> = { calcular: 1, analisar: 2, 'enviar-email': 3 };
+          return order[a.route] - order[b.route];
+        });
+
+      setRatePolicies(parsed);
+      setBaselinePolicies(parsed);
+    } catch {
+      showNotification('Falha ao carregar controle de rate limit.', 'error');
+    } finally {
+      setLoadingPolicies(false);
+    }
+  }, [showNotification]);
+
+  const salvarPoliticas = async (): Promise<void> => {
+    setSavingPolicies(true);
+    try {
+      const payload = {
+        policies: ratePolicies.map((p) => ({
+          route: p.route,
+          enabled: p.enabled,
+          max_requests: Math.max(1, Math.min(500, Number(p.max_requests) || 1)),
+          window_minutes: Math.max(1, Math.min(1440, Number(p.window_minutes) || 1))
+        }))
+      };
+
+      const res = await fetch('/api/admin/rate-limit-salvar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json() as { success: boolean; error?: string };
+      if (!data.success) {
+        throw new Error(data.error || 'Não foi possível salvar.');
+      }
+
+      showNotification('Escudo de rate limit atualizado.', 'success');
+      await carregarPoliticas();
+    } catch {
+      showNotification('Falha ao salvar políticas de rate limit.', 'error');
+    } finally {
+      setSavingPolicies(false);
+    }
+  };
+
+  const atualizarPolitica = (route: RateLimitPolicy['route'], patch: Partial<RateLimitPolicy>) => {
+    setRatePolicies((prev) => prev.map((policy) => (policy.route === route ? { ...policy, ...patch } : policy)));
+  };
+
+  const restaurarPadrao = (route: RateLimitPolicy['route']) => {
+    const baseline = defaultPolicies[route];
+    atualizarPolitica(route, {
+      enabled: baseline.enabled,
+      max_requests: baseline.max_requests,
+      window_minutes: baseline.window_minutes
+    });
+  };
+
+  const restaurarTodosPadroes = () => {
+    setRatePolicies((prev) => prev.map((policy) => ({
+      ...policy,
+      ...defaultPolicies[policy.route]
+    })));
+    showNotification('Padrões restaurados para todas as rotas.', 'info');
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -161,8 +285,9 @@ export default function App() {
       finally { if (mounted) setLoadingList(false); }
     };
     void fetchDados();
+    void carregarPoliticas();
     return () => { mounted = false; };
-  }, [showNotification]);
+  }, [showNotification, carregarPoliticas]);
 
   const recarregarManual = async () => {
     setIsRefreshing(true);
@@ -431,6 +556,75 @@ export default function App() {
               {/* RODAPÉ ISOLADO CONTENDO APENAS O TOTAL */}
               <div className="bg-slate-50/90 p-4 md:p-5 px-6 flex justify-start items-center border-t border-slate-100">
                 <span className="text-[10px] md:text-xs font-bold text-slate-500 tracking-wide uppercase">Total: <strong className="text-blue-600 text-xs md:text-sm ml-1">{lista.length}</strong></span>
+              </div>
+            </div>
+
+            <div className="md3-glass w-full max-w-5xl bg-white/80 backdrop-blur-2xl border border-white rounded-[1.75rem] mb-8 shadow-[0_8px_32px_rgba(0,0,0,0.06)] p-4 md:p-5">
+              <div className="flex items-center justify-between gap-4 mb-4 border-b border-rose-100 pb-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h3 className="text-sm md:text-base font-black text-rose-600 uppercase tracking-wider flex items-center gap-2"><ShieldAlert className="w-4 h-4" /> Segurança e Custos (Limitação de API)</h3>
+                  {hasUnsavedPolicies && (
+                    <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-[10px] md:text-[11px] font-bold uppercase tracking-wide border border-amber-200">
+                      Alterações não salvas
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={restaurarTodosPadroes}
+                    disabled={savingPolicies || loadingPolicies || ratePolicies.length === 0}
+                    className="px-3 py-2 rounded-xl bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 text-[10px] md:text-xs font-bold uppercase tracking-wider disabled:opacity-50"
+                    title="Restaurar padrão para todas as rotas"
+                  >
+                    Restaurar padrão (todas)
+                  </button>
+                  <button onClick={salvarPoliticas} disabled={savingPolicies || loadingPolicies || ratePolicies.length === 0 || !hasUnsavedPolicies} className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[10px] md:text-xs font-bold uppercase tracking-wider disabled:opacity-50 flex items-center gap-2"><Save className="w-3.5 h-3.5" /> {savingPolicies ? 'Salvando...' : 'Salvar'}</button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {loadingPolicies ? (
+                  <div className="text-xs md:text-sm text-slate-500 py-3">Sincronizando políticas...</div>
+                ) : ratePolicies.length === 0 ? (
+                  <div className="text-xs md:text-sm text-slate-500 py-3">Nenhuma política encontrada.</div>
+                ) : ratePolicies.map((policy) => (
+                  <div key={policy.route} className="rounded-2xl border border-rose-200/60 bg-rose-50/50 p-3 md:p-4">
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={policy.enabled} onChange={(e) => atualizarPolitica(policy.route, { enabled: e.target.checked })} className="w-4 h-4 accent-rose-600" />
+                        <span className="text-xs md:text-sm font-bold text-rose-700">Habilitar Escudo ({routeLabel[policy.route]})</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => restaurarPadrao(policy.route)}
+                        className="px-2.5 py-1.5 text-[10px] md:text-[11px] font-bold uppercase tracking-wide rounded-lg bg-white border border-rose-200 text-rose-600 hover:bg-rose-100"
+                        title={`Restaurar padrão para ${routeLabel[policy.route]}`}
+                      >
+                        Restaurar padrão
+                      </button>
+                    </div>
+
+                    <p className="text-[11px] md:text-xs text-rose-500 mb-3">Quando ativo, bloqueia temporariamente excessos de requisição por IP nesta rota.</p>
+
+                    <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-1 text-[10px] md:text-[11px] font-bold uppercase tracking-wide text-rose-700">
+                      <span className={`inline-block w-2 h-2 rounded-full ${policy.enabled ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                      <span>{policy.enabled ? 'Ativo' : 'Inativo'}</span>
+                      <span className="text-rose-400">•</span>
+                      <span>{policy.max_requests} req / {policy.window_minutes} min</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] md:text-[11px] font-bold uppercase tracking-wide text-rose-700">Máx. requisições por IP</label>
+                        <input type="number" min={1} max={500} title={`Máximo de requisições por IP para ${routeLabel[policy.route]}`} placeholder="Ex: 10" value={policy.max_requests} onChange={(e) => atualizarPolitica(policy.route, { max_requests: Math.max(1, Number(e.target.value) || 1) })} className="w-full mt-1 p-2.5 bg-white border border-rose-200 rounded-xl text-slate-800" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] md:text-[11px] font-bold uppercase tracking-wide text-rose-700">Janela (minutos)</label>
+                        <input type="number" min={1} max={1440} title={`Janela em minutos para ${routeLabel[policy.route]}`} placeholder="Ex: 15" value={policy.window_minutes} onChange={(e) => atualizarPolitica(policy.route, { window_minutes: Math.max(1, Number(e.target.value) || 1) })} className="w-full mt-1 p-2.5 bg-white border border-rose-200 rounded-xl text-slate-800" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 

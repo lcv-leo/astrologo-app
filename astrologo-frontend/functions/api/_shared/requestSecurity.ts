@@ -23,6 +23,10 @@ export interface RateLimitConfig {
   windowMs: number;
 }
 
+export interface EffectiveRateLimitConfig extends RateLimitConfig {
+  enabled: boolean;
+}
+
 export interface RateLimitResult {
   allowed: boolean;
   limit: number;
@@ -34,6 +38,12 @@ export interface RateLimitResult {
 interface RateLimitRow {
   request_count: number;
   window_start: number;
+}
+
+interface RateLimitPolicyRow {
+  enabled: number;
+  max_requests: number;
+  window_minutes: number;
 }
 
 export const isAllowedLcvOrigin = (origin: string): boolean => /^https:\/\/([a-z0-9-]+\.)*lcv\.app\.br$/i.test(origin);
@@ -151,4 +161,34 @@ export const enforceRateLimit = async (
     remaining: Math.max(config.limit - nextCount, 0),
     resetAt
   };
+};
+
+export const resolveRateLimitConfig = async (
+  db: D1DatabaseLike,
+  fallback: RateLimitConfig
+): Promise<EffectiveRateLimitConfig> => {
+  try {
+    const policy = await db
+      .prepare<RateLimitPolicyRow>("SELECT enabled, max_requests, window_minutes FROM rate_limit_policies WHERE route = ?")
+      .bind(fallback.route)
+      .first();
+
+    const row = (policy ?? null) as RateLimitPolicyRow | null;
+    if (!row) {
+      return { ...fallback, enabled: true };
+    }
+
+    const enabled = Number(row.enabled) !== 0;
+    const limit = Math.max(1, Number(row.max_requests) || fallback.limit);
+    const windowMs = Math.max(1, Number(row.window_minutes) || Math.round(fallback.windowMs / 60000)) * 60 * 1000;
+
+    return {
+      route: fallback.route,
+      enabled,
+      limit,
+      windowMs
+    };
+  } catch {
+    return { ...fallback, enabled: true };
+  }
 };

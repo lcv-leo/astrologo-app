@@ -1,5 +1,5 @@
 import { calcExpressionNumber, getJulianDate, getTatwaAtMoment, isValidDateString, isValidTimeString, reduceNum, wrapDegrees, type AstroInfo } from './_shared/astroCore';
-import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, rateLimitHeaders, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
+import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, rateLimitHeaders, resolveRateLimitConfig, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
 
 interface EnvBindings { GEMINI_API_KEY: string; DB: D1DatabaseLike; }
 interface Context { request: Request; env: EnvBindings; }
@@ -28,7 +28,12 @@ export async function onRequestPost(context: Context) {
         });
     }
 
-    const rateLimit = await enforceRateLimit(env.DB, request, RATE_LIMIT);
+    const activeRateLimit = await resolveRateLimitConfig(env.DB, RATE_LIMIT);
+
+    const rateLimit = activeRateLimit.enabled
+        ? await enforceRateLimit(env.DB, request, activeRateLimit)
+        : { allowed: true, limit: activeRateLimit.limit, remaining: activeRateLimit.limit, resetAt: Date.now() + activeRateLimit.windowMs };
+
     const limitHeaders = rateLimitHeaders(rateLimit);
 
     if (!rateLimit.allowed) {
