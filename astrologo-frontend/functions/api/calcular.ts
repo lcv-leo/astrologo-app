@@ -144,7 +144,7 @@ export async function onRequestPost(context: Context) {
             const startIndex = chaldean.indexOf(rulerOfDay);
             const totalHoursPassed = isDay ? hourIndex : 12 + hourIndex;
 
-            return chaldean[totalHoursPassed % 7];
+            return chaldean[(startIndex + totalHoursPassed) % 7];
         };
 
         const planetaRegenteHora = getPlanetaryHour();
