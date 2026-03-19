@@ -1,3 +1,7 @@
+# Módulo: .github/workflows/deploy-astrologo.yml
+# Versão: v1.1.0
+# Descrição: Deploy unificado do Frontend e Admin do Astrologo Monorepo em job único com cache otimizado.
+
 name: Deploy Astrologo Monorepo
 
 on:
@@ -18,14 +22,22 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v5
 
-      - name: Setup Node.js (Latest LTS)
+      - name: Setup Node.js (Latest LTS) com Cache Monorepo
         uses: actions/setup-node@v5
         with:
           node-version: '24' # Força o uso do Node.js moderno e limpo
+          cache: 'npm'
+          cache-dependency-path: |
+            ./astrologo-frontend/package-lock.json
+            ./astrologo-admin/package-lock.json
 
       - name: Install Frontend Dependencies
         working-directory: ./astrologo-frontend
         run: npm install
+
+      - name: Run Frontend Tests
+        working-directory: ./astrologo-frontend
+        run: npm test
 
       - name: Build Frontend
         working-directory: ./astrologo-frontend
@@ -37,11 +49,15 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         # Chama diretamente a CLI mais moderna, enviando para a branch 'production' da Cloudflare
-        run: npx wrangler@latest pages deploy dist --project-name astrologo-frontend --branch production --commit-dirty=true
+        run: npx wrangler@latest pages deploy dist --project-name astrologo-frontend --branch production --commit-dirty=true --experimental-json-config
 
       - name: Install Admin Dependencies
         working-directory: ./astrologo-admin
         run: npm install
+
+      - name: Run Admin Tests
+        working-directory: ./astrologo-admin
+        run: npm test
 
       - name: Build Admin
         working-directory: ./astrologo-admin
@@ -52,5 +68,5 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        # Chama diretamente a CLI mais moderna, enviando para a branch 'production' da Cloudflare
-        run: npx wrangler@latest pages deploy dist --project-name astrologo-admin --branch production --commit-dirty=true
+        # Chama diretamente a CLI mais moderna, enviando para a branch 'production' da Cloudflare.
+        run: npx wrangler@latest pages deploy dist --project-name astrologo-admin --branch production --commit-dirty=true --experimental-json-config
