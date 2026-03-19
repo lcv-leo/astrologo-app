@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Compass, Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, Info, Star, MapPin, User, Calendar, Clock, X, HelpCircle, Mail, Send, RotateCcw } from 'lucide-react';
+import { useNotification } from './components/Notification';
 
 const APP_VERSION = "2.10.00";
 
@@ -155,6 +156,7 @@ export const RenderBlocoAstrologico: React.FC<BlocoProps> = ({ titulo, dadosAstr
 export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSolicitarAnalise, loadingAi, openInfoModal }) => {
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const { showNotification } = useNotification();
 
   const gerarTextoRelatorio = (): string => {
     let t = `🌌 *DIAGNÓSTICO ASTROLÓGICO E ESOTÉRICO* 🌌\n\n👤 *Consulente:* ${result.query.nome}\n📍 *Local:* ${result.query.localNascimento}\n📅 *Nascimento:* ${formatarData(result.query.dataNascimento)} às ${result.query.horaNascimento}\n\n`;
@@ -181,15 +183,15 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
     h += `<p style="text-align:center; font-size: 12px; color:#94a3b8; margin-top:30px; border-top: 1px solid #e2e8f0; padding-top: 15px;"><em>Gerado via Oráculo Celestial</em></p></div>`; return h;
   };
 
-  const copiar = () => { navigator.clipboard.writeText(gerarTextoRelatorio()); alert("Dossiê copiado para a memória!"); };
+  const copiar = () => { navigator.clipboard.writeText(gerarTextoRelatorio()); showNotification("Dossiê copiado para a memória!", 'success'); };
   const whatsapp = () => { window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(gerarTextoRelatorio())}`, '_blank'); };
   const dispararEmail = async (emailDestino: string) => {
     setSendingEmail(true);
     try {
       const res = await fetch('/api/enviar-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ emailDestino, relatorioHtml: gerarHtmlRelatorio(), relatorioTexto: gerarTextoRelatorio(), nomeConsulente: result.query.nome }) });
       const data = await res.json() as { success: boolean; message?: string; error?: string };
-      if (data.success) { alert(String(data.message)); setEmailModalOpen(false); } else { alert(String(data.error)); }
-    } catch { alert("Falha na ponte do e-mail."); }
+      if (data.success) { showNotification(String(data.message), 'success'); setEmailModalOpen(false); } else { showNotification(String(data.error), 'error'); }
+    } catch { showNotification("Falha na ponte do e-mail.", 'error'); }
     setSendingEmail(false);
   };
 
@@ -250,14 +252,15 @@ export default function App() {
   const [loading, setLoading] = useState(false); const [loadingAi, setLoadingAi] = useState(false);
   const [result, setResult] = useState<ResultData | null>(null); const [analiseIa, setAnaliseIa] = useState<string>('');
   const [modalType, setModalType] = useState<'astronomica' | 'tropical' | null>(null);
+  const { showNotification } = useNotification();
 
   const calcularMapa = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setAnaliseIa(''); setResult(null);
     try {
       const res = await fetch('/api/calcular', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
       const data = await res.json() as { success: boolean; error?: string } & ResultData;
-      if (data.success) { setResult(data); } else { alert(String(data.error)); }
-    } catch { alert("Erro de conexão."); }
+      if (data.success) { setResult(data); } else { showNotification(String(data.error), 'error'); }
+    } catch { showNotification("Erro de conexão.", 'error'); }
     setLoading(false);
   };
 
@@ -267,7 +270,7 @@ export default function App() {
     try {
       const res = await fetch('/api/analisar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: result.id, dadosAstronomica: result.dadosAstronomica, dadosTropical: result.dadosTropical, dadosGlobais: result.dadosGlobais, query: result.query }) });
       const data = await res.json() as { analise?: string }; if (data.analise) setAnaliseIa(data.analise);
-    } catch { alert("A Inteligência falhou."); }
+    } catch { showNotification("A Inteligência falhou.", 'error'); }
     setLoadingAi(false);
   };
 

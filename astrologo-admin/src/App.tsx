@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Database, RefreshCw, Trash2, Star, Sun, Moon, Sparkles, Wind, Hash, X, CheckCircle2, AlertCircle, BrainCircuit } from 'lucide-react';
+import { useNotification } from './components/Notification';
+import { Database, RefreshCw, Trash2, Star, Sun, Moon, Sparkles, Wind, Hash, BrainCircuit } from 'lucide-react';
 
 const ADMIN_VERSION = "2.11.00";
 
@@ -11,7 +12,7 @@ interface ResultData { id: string; query: { nome: string; localNascimento: strin
 interface ListMapData { id: string; nome: string; data_nascimento: string; }
 interface BlocoProps { titulo: string; dadosAstrologia: AstroData[]; dadosUmbanda: UmbandaData[]; icon: React.ElementType; isTropical: boolean; }
 interface ResultViewProps { result: ResultData; analiseIa: string; }
-interface NotificationConfig { show: boolean; type: 'success' | 'error'; message: string; }
+
 interface ConfirmConfig { show: boolean; id: string; nome: string; }
 
 const formatarData = (dataStr: string): string => {
@@ -27,25 +28,6 @@ const formatPosicaoLabel = (pos: string): string => {
     return match ? `HORA PLANETÁRIA (${match[1].trim()})` : 'HORA PLANETÁRIA (ASTRO)';
   }
   return p;
-};
-
-const GlassToast: React.FC<{ config: NotificationConfig; onClose: () => void }> = ({ config, onClose }) => {
-  useEffect(() => {
-    if (config.show) { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); }
-  }, [config.show, onClose]);
-
-  if (!config.show) return null;
-  const isErr = config.type === 'error';
-
-  return (
-    <div className="fixed bottom-6 right-6 z-[999999] animate-in slide-in-from-bottom-8 fade-in duration-300">
-      <div className={`bg-white/90 backdrop-blur-2xl border ${isErr ? 'border-red-200 text-red-600' : 'border-emerald-200 text-emerald-600'} p-4 px-6 rounded-2xl shadow-xl flex items-center gap-3 font-bold text-sm md:text-base`}>
-        {isErr ? <AlertCircle className="w-5 h-5 flex-shrink-0" /> : <CheckCircle2 className="w-5 h-5 flex-shrink-0" />}
-        <span>{config.message}</span>
-        <button onClick={onClose} className="ml-4 text-slate-400 hover:text-slate-600" title="OK" aria-label="Fechar Notificação"><X className="w-4 h-4" /></button>
-      </div>
-    </div>
-  );
 };
 
 const GlassConfirm: React.FC<{ config: ConfirmConfig; onConfirm: (id: string) => void; onCancel: () => void }> = ({ config, onConfirm, onCancel }) => {
@@ -135,10 +117,8 @@ export default function App() {
   const [selectedMap, setSelectedMap] = useState<ResultData | null>(null);
   const [loadingList, setLoadingList] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [toast, setToast] = useState<NotificationConfig>({ show: false, type: 'success', message: '' });
+  const { showNotification } = useNotification();
   const [confirmDialog, setConfirmDialog] = useState<ConfirmConfig>({ show: false, id: '', nome: '' });
-
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => setToast({ show: true, message, type });
 
   useEffect(() => {
     let mounted = true;
@@ -148,20 +128,20 @@ export default function App() {
         const res = await fetch(`/api/admin/listar`);
         const data = await res.json() as { success: boolean; mapas: ListMapData[]; error?: string };
         if (data.success && mounted) { setLista(data.mapas); }
-      } catch { showToast("Erro na busca de registros.", "error"); }
+      } catch { showNotification("Erro na busca de registros.", "error"); }
       finally { if (mounted) setLoadingList(false); }
     };
     void fetchDados();
     return () => { mounted = false; };
-  }, []);
+  }, [showNotification]);
 
   const recarregarManual = async () => {
     setIsRefreshing(true);
     try {
       const res = await fetch(`/api/admin/listar`);
       const data = await res.json() as { success: boolean; mapas: ListMapData[]; error?: string };
-      if (data.success) { setLista(data.mapas); showToast("Registros sincronizados com o Akasha.", "success"); }
-    } catch { showToast("Falha de conexão com o banco.", "error"); }
+      if (data.success) { setLista(data.mapas); showNotification("Registros sincronizados com o Akasha.", "success"); }
+    } catch { showNotification("Falha de conexão com o banco.", "error"); }
     finally { setIsRefreshing(false); }
   };
 
@@ -179,7 +159,7 @@ export default function App() {
           analiseIa: m.analise_ia || ''
         });
       }
-    } catch { showToast("Falha ao abrir os registros ocultos.", "error"); }
+    } catch { showNotification("Falha ao abrir os registros ocultos.", "error"); }
   };
 
   const deletarMapa = async (id: string, nome: string, e: React.MouseEvent) => {
@@ -196,9 +176,9 @@ export default function App() {
       if (data.success) {
         setLista(prev => prev.filter(item => item.id !== id));
         if (selectedMap?.id === id) setSelectedMap(null);
-        showToast("Registro expurgado permanentemente.", "success");
-      } else { showToast(String(data.error), "error"); }
-    } catch { showToast("Falha de conexão com a nuvem.", "error"); }
+        showNotification("Registro expurgado permanentemente.", "success");
+      } else { showNotification(String(data.error), "error"); }
+    } catch { showNotification("Falha de conexão com a nuvem.", "error"); }
     finally { setIsRefreshing(false); }
   };
 
@@ -206,7 +186,6 @@ export default function App() {
     <div className="min-h-screen bg-transparent text-slate-800 font-sans flex flex-col items-center w-full overflow-x-hidden relative">
       <div className="absolute inset-0 bg-slate-50 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-100/40 via-slate-50 to-indigo-100/40 -z-10 fixed"></div>
 
-      <GlassToast config={toast} onClose={() => setToast({ ...toast, show: false })} />
       <GlassConfirm config={confirmDialog} onConfirm={executarExclusao} onCancel={() => setConfirmDialog({ ...confirmDialog, show: false })} />
 
       <div className="max-w-6xl mx-auto w-full flex flex-col items-center flex-grow p-3 sm:p-5 md:p-6">
