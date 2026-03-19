@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calcExpressionNumber, getJulianDate, isValidDateString, isValidTimeString, reduceNum, toHourMinute, wrapDegrees } from './astroCore';
+import { calcExpressionNumber, getJulianDate, getTatwaAtMoment, isValidDateString, isValidTimeString, reduceNum, toHourMinute, wrapDegrees } from './astroCore';
 
 describe('astroCore', () => {
   it('valida datas reais e rejeita datas inválidas', () => {
@@ -38,5 +38,11 @@ describe('astroCore', () => {
 
   it('calcula data juliana de forma determinística', () => {
     expect(getJulianDate(2000, 1, 1, 12, 0)).toBe(2451545);
+  });
+
+  it('calcula Vayu-Akasha para 16:45 com nascer do sol 06:00', () => {
+    const tatwa = getTatwaAtMoment(16, 45, 6, 0);
+    expect(tatwa.principal).toBe('Vayu (Ar)');
+    expect(tatwa.sub).toBe('Akasha (Éter)');
   });
 });

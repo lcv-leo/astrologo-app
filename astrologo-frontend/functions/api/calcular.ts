@@ -1,10 +1,17 @@
-import { calcExpressionNumber, getJulianDate, isValidDateString, isValidTimeString, reduceNum, toHourMinute, wrapDegrees, type AstroInfo } from './_shared/astroCore';
+import { calcExpressionNumber, getJulianDate, getTatwaAtMoment, isValidDateString, isValidTimeString, reduceNum, wrapDegrees, type AstroInfo } from './_shared/astroCore';
 import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, rateLimitHeaders, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
 
 interface EnvBindings { GEMINI_API_KEY: string; DB: D1DatabaseLike; }
 interface Context { request: Request; env: EnvBindings; }
 
 const RATE_LIMIT = { route: 'calcular', limit: 10, windowMs: 10 * 60 * 1000 };
+
+const parseIsoTime = (value: string | undefined, fallbackH: number, fallbackM: number): [number, number] => {
+    if (!value) return [fallbackH, fallbackM];
+    const match = value.match(/T(\d{2}):(\d{2})/);
+    if (!match) return [fallbackH, fallbackM];
+    return [Number(match[1]), Number(match[2])];
+};
 
 export async function onRequestOptions(context: Context) {
     return new Response(null, { headers: { ...getCorsHeaders(context.request, 'https://mapa-astral.lcv.app.br'), ...securityHeaders } });
@@ -53,31 +60,24 @@ export async function onRequestPost(context: Context) {
 
         const tz = -3;
 
-        const prompt = `Retorne APENAS um JSON com lat, lon, sunrise e sunset de "${localNascimento}" no dia ${dataNascimento} considerando o fuso horário oficial de Brasília (UTC-3). Ex: {"lat":-22.9068,"lon":-43.1729,"sunrise":"06:05","sunset":"18:15"}`;
-        let lat = -22.9068; let lon = -43.1729; let srH = 6; let srM = 5; let ssH = 18; let ssM = 0;
+        let lat = -22.9068; let lon = -43.1729; let srH = 6; let srM = 0; let ssH = 18; let ssM = 0;
 
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key=${env.GEMINI_API_KEY}`, {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            });
-            const aiData = await response.json() as Record<string, unknown>;
-            const candidates = aiData?.candidates as Array<Record<string, unknown>>;
-            const content = candidates?.[0]?.content as Record<string, unknown>;
-            const parts = content?.parts as Array<Record<string, string>>;
-            const jsonText = parts?.[0]?.text || "{}";
-            const match = jsonText.match(/\{[\s\S]*\}/);
-            if (match) {
-                try {
-                    const geo = JSON.parse(match[0]) as Record<string, string | number>;
-                    lat = typeof geo.lat === 'string' ? parseFloat(geo.lat) : Number(geo.lat) || lat;
-                    lon = typeof geo.lon === 'string' ? parseFloat(geo.lon) : Number(geo.lon) || lon;
-
-                    [srH, srM] = toHourMinute(String(geo.sunrise || "06:05"), 6, 5);
-                    [ssH, ssM] = toHourMinute(String(geo.sunset || "18:00"), 18, 0);
-                } catch {
-                    console.log("JSON de geolocalização inválido. Mantendo fallback seguro.");
+            const encodedName = encodeURIComponent(localNascimento);
+            const geocodeRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodedName}&count=1&language=pt&format=json`);
+            if (geocodeRes.ok) {
+                const geocodeData = await geocodeRes.json() as { results?: Array<{ latitude: number; longitude: number }> };
+                const top = geocodeData.results?.[0];
+                if (top) {
+                    lat = Number(top.latitude) || lat;
+                    lon = Number(top.longitude) || lon;
                 }
+            }
+            const archiveRes = await fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${dataNascimento}&end_date=${dataNascimento}&daily=sunrise,sunset&timezone=America%2FSao_Paulo`);
+            if (archiveRes.ok) {
+                const archiveData = await archiveRes.json() as { daily?: { sunrise?: string[]; sunset?: string[] } };
+                [srH, srM] = parseIsoTime(archiveData.daily?.sunrise?.[0], 6, 0);
+                [ssH, ssM] = parseIsoTime(archiveData.daily?.sunset?.[0], 18, 0);
             }
         } catch { console.log("Usando Fallback Geográfico (RJ)."); }
 
@@ -213,13 +213,9 @@ export async function onRequestPost(context: Context) {
             };
         };
 
-        let minsFromSunrise = Math.round((hLocal * 60 + mLocal) - (srH * 60 + srM));
-        if (minsFromSunrise < 0) minsFromSunrise += 1440;
-        const tattwas = ["Akasha (Éter)", "Vayu (Ar)", "Tejas (Fogo)", "Apas (Água)", "Prithvi (Terra)"];
-        const mainIdx = Math.floor(minsFromSunrise / 24) % 5;
-        const subIdx = (mainIdx + Math.floor((minsFromSunrise % 24) / 4.8)) % 5;
+        const tatwa = getTatwaAtMoment(hLocal, mLocal, srH, srM);
 
-        const dadosGlobais = { tatwa: { principal: tattwas[mainIdx], sub: tattwas[subIdx] }, numerologia: { expressao: calcExpressionNumber(nome), caminhoVida: reduceNum(dataNascimento), vibracaoHora: reduceNum(horaNascimento) } };
+        const dadosGlobais = { tatwa: { principal: tatwa.principal, sub: tatwa.sub }, numerologia: { expressao: calcExpressionNumber(nome), caminhoVida: reduceNum(dataNascimento), vibracaoHora: reduceNum(horaNascimento) } };
         const dadosAstronomica = gerarDadosSistema(getIauInfo(sunLon), getIauInfo(moonLon), getIauInfo(ascLon), getIauInfo(mcLon));
         const dadosTropical = gerarDadosSistema(getTropicalInfo(sunLon), getTropicalInfo(moonLon), getTropicalInfo(ascLon), getTropicalInfo(mcLon));
 

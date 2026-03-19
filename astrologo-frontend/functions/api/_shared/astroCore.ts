@@ -3,6 +3,21 @@ export interface AstroInfo {
   decanato: number;
 }
 
+export const TATWA_ORDER = [
+  "Akasha (Éter)",
+  "Vayu (Ar)",
+  "Tejas (Fogo)",
+  "Apas (Água)",
+  "Prithvi (Terra)"
+] as const;
+
+export interface TatwaResult {
+  principal: string;
+  sub: string;
+  principalIndex: number;
+  subIndex: number;
+}
+
 export const isValidDateString = (value: string): boolean => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const [y, m, d] = value.split("-").map(Number);
@@ -77,4 +92,27 @@ export const calcExpressionNumber = (input: string): number => {
     });
 
   return reduceNum(sum);
+};
+
+export const getTatwaAtMoment = (
+  hour: number,
+  minute: number,
+  sunriseHour: number,
+  sunriseMinute: number
+): TatwaResult => {
+  const nowMins = hour * 60 + minute;
+  const sunriseMins = sunriseHour * 60 + sunriseMinute;
+  const minsFromSunrise = ((nowMins - sunriseMins) % 1440 + 1440) % 1440;
+
+  const principalIndex = Math.floor(minsFromSunrise / 24) % 5;
+  const withinPrincipal = minsFromSunrise % 24;
+  const subOffset = Math.floor(withinPrincipal / 4.8);
+  const subIndex = (principalIndex + subOffset) % 5;
+
+  return {
+    principal: TATWA_ORDER[principalIndex],
+    sub: TATWA_ORDER[subIndex],
+    principalIndex,
+    subIndex
+  };
 };
