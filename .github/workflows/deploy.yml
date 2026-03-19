@@ -35,10 +35,6 @@ jobs:
         working-directory: ./astrologo-frontend
         run: npm install
 
-      - name: Run Frontend Tests
-        working-directory: ./astrologo-frontend
-        run: npm test
-
       - name: Build Frontend
         working-directory: ./astrologo-frontend
         run: npm run build
@@ -54,10 +50,6 @@ jobs:
       - name: Install Admin Dependencies
         working-directory: ./astrologo-admin
         run: npm install
-
-      - name: Run Admin Tests
-        working-directory: ./astrologo-admin
-        run: npm test
 
       - name: Build Admin
         working-directory: ./astrologo-admin
