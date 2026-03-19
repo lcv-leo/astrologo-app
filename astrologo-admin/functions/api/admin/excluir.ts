@@ -1,5 +1,5 @@
-interface Env { DB: { prepare: (q: string) => { bind: (...args: unknown[]) => { run: () => Promise<void> } } }; }
-interface Context { env: Env; request: Request; }
+interface EnvBindings { DB: { prepare: (q: string) => { bind: (...args: unknown[]) => { run: () => Promise<void> } } }; }
+interface Context { env: EnvBindings; request: Request; }
 
 export async function onRequestPost(context: Context) {
     const { env, request } = context;

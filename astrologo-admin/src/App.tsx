@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Database, RefreshCw, X, HelpCircle, Mail, Send, Trash2, Star, Sun, Moon, Sparkles, BrainCircuit, Copy, Share2, Info, Wind, Hash } from 'lucide-react';
 
-const ADMIN_VERSION = "2.03.00";
+const ADMIN_VERSION = "2.05.00";
 
 interface AstroData { astro: string; signo: string; simbolo: string; }
 interface UmbandaData { posicao: string; orixa: string; simbolo: string; }
+interface DadosGlobais { tatwa: { principal: string; sub: string; }; numerologia: { expressao: number; caminhoVida: number; vibracaoHora: number; }; }
+interface DadosSistema { astrologia: AstroData[]; umbanda: UmbandaData[]; }
+interface ResultData { id: string; query: { nome: string; localNascimento: string; dataNascimento: string; horaNascimento: string; }; dadosGlobais: DadosGlobais; dadosAstronomica: DadosSistema; dadosTropical: DadosSistema; analiseIa?: string; }
+interface ListMapData { id: string; nome: string; data_nascimento: string; }
 interface ModalProps { type: 'astronomica' | 'tropical' | null; onClose: () => void; }
 interface EmailModalProps { isOpen: boolean; onClose: () => void; onSend: (e: string) => void; isSending: boolean; }
 interface BlocoProps { titulo: string; dadosAstrologia: AstroData[]; dadosUmbanda: UmbandaData[]; icon: React.ElementType; isTropical: boolean; onInfoClick: () => void; }
-interface ResultViewProps { result: Record<string, any>; analiseIa: string; openInfoModal: (t: 'astronomica' | 'tropical') => void; }
+interface ResultViewProps { result: ResultData; analiseIa: string; openInfoModal: (t: 'astronomica' | 'tropical') => void; }
 
 const formatarData = (dataStr: string) => {
   if (!dataStr) return ''; const p = dataStr.split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : dataStr;
@@ -113,7 +117,7 @@ const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, openInfoModa
 
   const gerarHtmlRelatorio = () => {
     let h = `<div style="font-family: sans-serif; color: #1e293b; background-color: #f8fafc; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px;"><h2 style="color: #d97706; text-align: center; text-transform: uppercase;">🌌 Dossiê Astrológico</h2><p style="text-align: center; font-size: 18px; margin-bottom: 5px;"><strong>${result.query.nome}</strong></p><p style="text-align: center; font-size: 14px; color: #64748b; margin-top: 0;">${result.query.localNascimento}<br/>${formatarData(result.query.dataNascimento)} às ${result.query.horaNascimento}</p><h3 style="color: #0ea5e9; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">🌬️ Forças Globais</h3><p><strong>Tatwa Principal:</strong> ${result.dadosGlobais.tatwa.principal} <br/><strong>Sub-tatwa:</strong> ${result.dadosGlobais.tatwa.sub}</p><p><strong>Numerologia:</strong> Expressão ${result.dadosGlobais.numerologia.expressao} | Caminho ${result.dadosGlobais.numerologia.caminhoVida} | Hora ${result.dadosGlobais.numerologia.vibracaoHora}</p>`;
-    const extrairHtml = (titulo: string, dados: Record<string, any>, cor: string) => {
+    const extrairHtml = (titulo: string, dados: DadosSistema, cor: string) => {
       return `<h3 style="color: ${cor}; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 25px;">${titulo}</h3><p><strong>Astros:</strong> Sol em ${dados.astrologia[0].signo} | Asc em ${dados.astrologia[1].signo} | Lua em ${dados.astrologia[2].signo} | MC em ${dados.astrologia[3].signo}</p><p><strong>Umbanda:</strong> Coroa: ${dados.umbanda[0].orixa} | Adjuntó: ${dados.umbanda[1].orixa} | Frente: ${dados.umbanda[2].orixa}<br/>Decanato: ${dados.umbanda[3].orixa} | Faixa (3h): ${dados.umbanda[4].orixa} | Astro: ${dados.umbanda[5].orixa}</p>`;
     };
     h += extrairHtml("🌞 Módulo I: Tropical Sazonal (A Persona)", result.dadosTropical, "#ea580c");
@@ -129,7 +133,8 @@ const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, openInfoModa
     setSendingEmail(true);
     try {
       const res = await fetch('[https://mapa-astral.lcv.app.br/api/enviar-email](https://mapa-astral.lcv.app.br/api/enviar-email)', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ emailDestino, relatorioHtml: gerarHtmlRelatorio(), relatorioTexto: gerarTextoRelatorio(), nomeConsulente: result.query.nome }) });
-      const data = await res.json() as Record<string, any>; if (data.success) { alert(String(data.message)); setEmailModalOpen(false); } else { alert(String(data.error)); }
+      const data = await res.json() as { success: boolean; message?: string; error?: string };
+      if (data.success) { alert(String(data.message)); setEmailModalOpen(false); } else { alert(String(data.error)); }
     } catch { alert("Falha na ponte do e-mail."); }
     setSendingEmail(false);
   };
@@ -159,7 +164,7 @@ const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, openInfoModa
 
       <div className="w-full my-12 relative group max-w-5xl mx-auto animate-in zoom-in duration-1000">
         <div className="absolute inset-0 bg-gradient-to-r from-rose-200/50 via-purple-200/50 to-indigo-200/50 rounded-[3rem] blur-2xl transition-all group-hover:via-purple-300/50"></div>
-        <div className="relative w-full bg-white/80 backdrop-blur-2xl border border-white/50 py-8 px-6 md:px-10 rounded-[2.5rem] shadow-[0_8px_32px_rgba(99,102,241,0.15)] flex flex-col items-center justify-center text-center overflow-hidden">
+        <div className="relative w-full bg-white/80 backdrop-blur-2xl border border-white/50 py-8 px-6 md:px-10 rounded-[2.5rem] shadow-xl flex flex-col items-center justify-center text-center overflow-hidden">
           <Sparkles className="w-10 h-10 text-rose-500 flex-shrink-0 animate-pulse mb-3" />
           <div className="flex flex-col items-center max-w-2xl"><h4 className="text-rose-600 font-black uppercase tracking-widest text-sm md:text-xl mb-2">✨ Agora, a Verdade Oculta! ✨</h4><p className="text-slate-600 text-xs md:text-base leading-relaxed text-balance">O módulo tradicional revelou a sua <strong>máscara terrena (Persona)</strong>. Desfaça a ilusão sazonal e contemple abaixo a sua <strong>verdadeira assinatura estelar</strong>.</p></div>
         </div>
@@ -168,7 +173,7 @@ const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, openInfoModa
       <RenderBlocoAstrologico titulo="Módulo II: Astronômico Constelacional" dadosAstrologia={result.dadosAstronomica.astrologia} dadosUmbanda={result.dadosAstronomica.umbanda} icon={Star} isTropical={false} onInfoClick={() => openInfoModal('astronomica')} />
 
       {analiseIa && (
-        <div className="mt-10 p-6 md:p-12 bg-white/80 backdrop-blur-2xl rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-8 duration-500 w-full overflow-hidden">
+        <div className="mt-10 p-6 md:p-12 bg-white/80 backdrop-blur-2xl rounded-[3rem] border border-white shadow-xl animate-in slide-in-from-bottom-8 duration-500 w-full overflow-hidden">
           <h3 className="text-xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-indigo-600 mb-6 md:mb-8 border-b border-slate-200 pb-4 flex items-center gap-3"><BrainCircuit className="text-rose-500 w-6 h-6 md:w-8 md:h-8 flex-shrink-0" /> Síntese do Mestre (IA)</h3>
           <div className="text-slate-700 text-sm md:text-base lg:text-lg leading-relaxed md:leading-loose space-y-4" dangerouslySetInnerHTML={{ __html: analiseIa }} />
         </div>
@@ -178,8 +183,8 @@ const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, openInfoModa
 };
 
 export default function App() {
-  const [lista, setLista] = useState<Array<Record<string, any>>>([]);
-  const [selectedMap, setSelectedMap] = useState<Record<string, any> | null>(null);
+  const [lista, setLista] = useState<ListMapData[]>([]);
+  const [selectedMap, setSelectedMap] = useState<ResultData | null>(null);
   const [loadingList, setLoadingList] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [modalType, setModalType] = useState<'astronomica' | 'tropical' | null>(null);
@@ -190,10 +195,10 @@ export default function App() {
       setLoadingList(true);
       try {
         const res = await fetch(`/api/admin/listar`);
-        const data = await res.json() as Record<string, any>;
+        const data = await res.json() as { success: boolean; mapas: ListMapData[]; error?: string };
         if (data.success && mounted) { setLista(data.mapas); }
       } catch { console.error("Erro na busca de registros."); }
-      if (mounted) setLoadingList(false);
+      finally { if (mounted) setLoadingList(false); }
     };
     void fetchDados();
     return () => { mounted = false; };
@@ -203,21 +208,24 @@ export default function App() {
     setIsRefreshing(true);
     try {
       const res = await fetch(`/api/admin/listar`);
-      const data = await res.json() as Record<string, any>;
+      const data = await res.json() as { success: boolean; mapas: ListMapData[]; error?: string };
       if (data.success) { setLista(data.mapas); }
     } catch { console.error("Erro de conexão."); }
-    setIsRefreshing(false);
+    finally { setIsRefreshing(false); }
   };
 
   const carregarMapa = async (id: string) => {
     try {
       const res = await fetch('/api/admin/ler', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
-      const data = await res.json() as Record<string, any>;
+      const data = await res.json() as { success: boolean; mapa: Record<string, string> };
       if (data.success) {
         const m = data.mapa;
         setSelectedMap({
           id: m.id, query: { nome: m.nome, dataNascimento: m.data_nascimento, horaNascimento: m.hora_nascimento, localNascimento: m.local_nascimento },
-          dadosGlobais: JSON.parse(m.dados_globais), dadosAstronomica: JSON.parse(m.dados_astronomica), dadosTropical: JSON.parse(m.dados_tropical), analiseIa: m.analise_ia || ''
+          dadosGlobais: JSON.parse(m.dados_globais) as DadosGlobais,
+          dadosAstronomica: JSON.parse(m.dados_astronomica) as DadosSistema,
+          dadosTropical: JSON.parse(m.dados_tropical) as DadosSistema,
+          analiseIa: m.analise_ia || ''
         });
       }
     } catch { alert("Falha ao abrir os registros."); }
@@ -225,15 +233,15 @@ export default function App() {
 
   const deletarMapa = async (id: string, nome: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm(`Confirma a exclusão permanente de ${nome}?`)) return;
+    if (!window.confirm(`Confirma a exclusão de ${nome}?`)) return;
     setIsRefreshing(true);
     try {
       const res = await fetch('/api/admin/excluir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
-      const data = await res.json() as Record<string, any>;
+      const data = await res.json() as { success: boolean; error?: string };
       if (data.success) { setLista(prev => prev.filter(item => item.id !== id)); if (selectedMap?.id === id) setSelectedMap(null); }
       else { alert(String(data.error) || "Erro ao tentar excluir."); }
     } catch { alert("Falha de conexão."); }
-    setIsRefreshing(false);
+    finally { setIsRefreshing(false); }
   };
 
   return (
@@ -283,7 +291,7 @@ export default function App() {
                 <h2 className="text-center text-xl md:text-2xl text-slate-800 font-bold mb-10 bg-white/60 backdrop-blur-xl p-5 px-8 rounded-[2rem] border border-white shadow-sm inline-flex items-center justify-center mx-auto gap-3 text-balance">
                   Ficha Oculta: <span className="text-rose-600 font-black">{selectedMap.query.nome}</span>
                 </h2>
-                <ResultView result={selectedMap} analiseIa={selectedMap.analiseIa} openInfoModal={setModalType} />
+                <ResultView result={selectedMap} analiseIa={selectedMap.analiseIa || ''} openInfoModal={setModalType} />
               </div>
             )}
           </div>
@@ -291,7 +299,7 @@ export default function App() {
       </div>
 
       <footer className="w-full py-6 mt-12 bg-white/40 backdrop-blur-md border-t border-white/60 flex justify-center items-center shrink-0">
-        <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs flex items-center gap-2"><span className="opacity-70">Oráculo Celestial</span><span className="opacity-30">•</span><span className="text-rose-600">ADMIN v{ADMIN_VERSION}</span></p>
+        <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs flex items-center gap-2"><span className="text-rose-600">ADMIN v{ADMIN_VERSION}</span></p>
       </footer>
     </div>
   );

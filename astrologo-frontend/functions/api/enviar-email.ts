@@ -1,8 +1,8 @@
-interface Env { RESEND_API_KEY: string; }
-interface Context { request: Request; env: Env; }
+interface EnvBindings { RESEND_API_KEY: string; }
+interface Context { request: Request; env: EnvBindings; }
 
 const corsHeaders = {
-    "Access-Control-Allow-Origin": "[https://admin.lcv.app.br](https://admin.lcv.app.br)",
+    "Access-Control-Allow-Origin": "https://astrologo-admin.lcv.app.br",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
 };
@@ -21,12 +21,11 @@ export async function onRequestPost(context: Context) {
 
         if (!RESEND_API_KEY) {
             return new Response(JSON.stringify({ success: false, error: "Chave do Resend não encontrada." }), {
-                status: 500,
-                headers: { "Content-Type": "application/json", ...corsHeaders }
+                status: 500, headers: { "Content-Type": "application/json", ...corsHeaders }
             });
         }
 
-        const res = await fetch('[https://api.resend.com/emails](https://api.resend.com/emails)', {
+        const res = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${RESEND_API_KEY}`,
@@ -49,14 +48,12 @@ export async function onRequestPost(context: Context) {
             });
         } else {
             return new Response(JSON.stringify({ success: false, error: String(data.message) }), {
-                status: 500,
-                headers: { "Content-Type": "application/json", ...corsHeaders }
+                status: 500, headers: { "Content-Type": "application/json", ...corsHeaders }
             });
         }
     } catch {
         return new Response(JSON.stringify({ success: false, error: "Falha interna na comunicação do e-mail." }), {
-            status: 500,
-            headers: { "Content-Type": "application/json", ...corsHeaders }
+            status: 500, headers: { "Content-Type": "application/json", ...corsHeaders }
         });
     }
 }

@@ -2,7 +2,10 @@ name: Deploy Astrologo Monorepo
 
 on:
   push:
-    branches: [ "main" ] # Gatilho oficial no GitHub
+    branches: [ "main" ]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 : true
 
 jobs:
   deploy:
@@ -17,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install Frontend Dependencies
         working-directory: ./astrologo-frontend
@@ -25,27 +28,6 @@ jobs:
 
       - name: Build Frontend
         working-directory: ./astrologo-frontend
-        run: npm run build
-
-      - name: Install Admin Dependencies
-        working-directory: ./astrologo-admin
-        run: npm install
-
-      - name: Install Backend Dependencies (Functions)
-        working-directory: ./functions
-        run: npm install
-
-      - name: Build Backend (Functions)
-        working-directory: ./functions
-        run: npm run build
-
-      - name: Sincronizar Backend (Functions)
-        run: |
-          cp -r functions astrologo-frontend/
-          cp -r functions astrologo-admin/
-
-      - name: Build Admin
-        working-directory: ./astrologo-admin
         run: npm run build
 
       - name: Deploy Frontend to Cloudflare Pages
@@ -56,7 +38,15 @@ jobs:
           projectName: astrologo-frontend
           directory: dist
           workingDirectory: astrologo-frontend
-          branch: production # Destino oficial na Cloudflare
+          branch: production
+
+      - name: Install Admin Dependencies
+        working-directory: ./astrologo-admin
+        run: npm install
+
+      - name: Build Admin
+        working-directory: ./astrologo-admin
+        run: npm run build
 
       - name: Deploy Admin to Cloudflare Pages
         uses: cloudflare/pages-action@v1
@@ -66,4 +56,4 @@ jobs:
           projectName: astrologo-admin
           directory: dist
           workingDirectory: astrologo-admin
-          branch: production # Destino oficial na Cloudflare
+          branch: production

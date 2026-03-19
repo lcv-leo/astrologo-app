@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Compass, Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, Info, Star, MapPin, User, Calendar, Clock, X, HelpCircle, Mail, Send } from 'lucide-react';
 
-const APP_VERSION = "2.03.00";
+const APP_VERSION = "2.05.00";
 
 interface AstroData { astro: string; signo: string; simbolo: string; }
 interface UmbandaData { posicao: string; orixa: string; simbolo: string; }
 interface DadosGlobais { tatwa: { principal: string; sub: string; }; numerologia: { expressao: number; caminhoVida: number; vibracaoHora: number; }; }
-interface ResultData { id: string; query: { nome: string; localNascimento: string; dataNascimento: string; horaNascimento: string; }; dadosGlobais: DadosGlobais; dadosAstronomica: { astrologia: AstroData[]; umbanda: UmbandaData[] }; dadosTropical: { astrologia: AstroData[]; umbanda: UmbandaData[] }; }
+interface DadosSistema { astrologia: AstroData[]; umbanda: UmbandaData[]; }
+interface ResultData { id: string; query: { nome: string; localNascimento: string; dataNascimento: string; horaNascimento: string; }; dadosGlobais: DadosGlobais; dadosAstronomica: DadosSistema; dadosTropical: DadosSistema; }
 interface ModalProps { type: 'astronomica' | 'tropical' | null; onClose: () => void; }
 interface EmailModalProps { isOpen: boolean; onClose: () => void; onSend: (email: string) => void; isSending: boolean; }
 interface AutocompleteProps { value: string; onChange: (v: string) => void; }
@@ -74,7 +75,7 @@ const LocationAutocomplete: React.FC<AutocompleteProps> = ({ value, onChange }) 
     if (val.length < 3) { setSuggestions([]); setIsOpen(false); return; }
     setLoading(true); const searchQuery = val.split(',')[0].trim();
     fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchQuery)}&count=5&language=pt&format=json`)
-      .then(res => res.json()).then(data => { setSuggestions(data.results || []); if (data.results?.length > 0) setIsOpen(true); }).finally(() => setLoading(false));
+      .then(res => res.json()).then(data => { const d = data as { results?: Array<Record<string, string>> }; setSuggestions(d.results || []); if (d.results && d.results.length > 0) setIsOpen(true); }).finally(() => setLoading(false));
   };
   const handleSelect = (s: Record<string, string>) => { const locName = [s.name, s.admin1, s.country].filter(Boolean).join(', '); setQuery(locName); onChange(locName); setIsOpen(false); };
   return (
@@ -155,7 +156,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
 
   const gerarHtmlRelatorio = () => {
     let h = `<div style="font-family: sans-serif; color: #1e293b; background-color: #f8fafc; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px;"><h2 style="color: #d97706; text-align: center; text-transform: uppercase;">🌌 Dossiê Astrológico</h2><p style="text-align: center; font-size: 18px; margin-bottom: 5px;"><strong>${result.query.nome}</strong></p><p style="text-align: center; font-size: 14px; color: #64748b; margin-top: 0;">${result.query.localNascimento}<br/>${formatarData(result.query.dataNascimento)} às ${result.query.horaNascimento}</p><h3 style="color: #0ea5e9; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">🌬️ Forças Globais</h3><p><strong>Tatwa Principal:</strong> ${result.dadosGlobais.tatwa.principal} <br/><strong>Sub-tatwa:</strong> ${result.dadosGlobais.tatwa.sub}</p><p><strong>Numerologia:</strong> Expressão ${result.dadosGlobais.numerologia.expressao} | Caminho ${result.dadosGlobais.numerologia.caminhoVida} | Hora ${result.dadosGlobais.numerologia.vibracaoHora}</p>`;
-    const extrairHtml = (titulo: string, dados: Record<string, any>, cor: string) => {
+    const extrairHtml = (titulo: string, dados: DadosSistema, cor: string) => {
       return `<h3 style="color: ${cor}; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 25px;">${titulo}</h3><p><strong>Astros:</strong> Sol em ${dados.astrologia[0].signo} | Asc em ${dados.astrologia[1].signo} | Lua em ${dados.astrologia[2].signo} | MC em ${dados.astrologia[3].signo}</p><p><strong>Umbanda:</strong> Coroa: ${dados.umbanda[0].orixa} | Adjuntó: ${dados.umbanda[1].orixa} | Frente: ${dados.umbanda[2].orixa}<br/>Decanato: ${dados.umbanda[3].orixa} | Faixa (3h): ${dados.umbanda[4].orixa} | Astro: ${dados.umbanda[5].orixa}</p>`;
     };
     h += extrairHtml("🌞 Módulo I: Tropical Sazonal (A Persona)", result.dadosTropical, "#ea580c");
@@ -171,7 +172,8 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
     setSendingEmail(true);
     try {
       const res = await fetch('/api/enviar-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ emailDestino, relatorioHtml: gerarHtmlRelatorio(), relatorioTexto: gerarTextoRelatorio(), nomeConsulente: result.query.nome }) });
-      const data = await res.json() as Record<string, unknown>; if (data.success) { alert(String(data.message)); setEmailModalOpen(false); } else { alert(String(data.error)); }
+      const data = await res.json() as { success: boolean; message?: string; error?: string };
+      if (data.success) { alert(String(data.message)); setEmailModalOpen(false); } else { alert(String(data.error)); }
     } catch { alert("Falha na ponte do e-mail."); }
     setSendingEmail(false);
   };
@@ -188,12 +190,12 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
 
       <div className="grid md:grid-cols-2 gap-4 md:gap-6 w-full mb-8">
         <div className="bg-white/70 backdrop-blur-2xl p-5 md:p-8 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full flex flex-col justify-center min-w-0">
-          <h3 className="text-lg md:text-xl font-bold text-indigo-600 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Wind className="text-blue-500 w-5 h-5" /> Forças Globais: Tatwas</h3>
+          <h3 className="text-lg md:text-xl font-bold text-blue-600 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Wind className="text-blue-500 w-5 h-5" /> Forças Globais: Tatwas</h3>
           <div className="space-y-3"><div className="bg-white/80 p-3 md:p-4 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm"><p className="text-[11px] md:text-xs text-slate-500">Principal</p><p className="font-bold text-slate-800 text-sm md:text-base truncate pl-2">{result.dadosGlobais.tatwa.principal}</p></div><div className="bg-white/80 p-3 md:p-4 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm"><p className="text-[11px] md:text-xs text-slate-500">Sub-tatwa</p><p className="font-bold text-slate-800 text-sm md:text-base truncate pl-2">{result.dadosGlobais.tatwa.sub}</p></div></div>
         </div>
         <div className="bg-white/70 backdrop-blur-2xl p-5 md:p-8 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full flex flex-col justify-center min-w-0">
-          <h3 className="text-lg md:text-xl font-bold text-indigo-600 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Hash className="text-blue-500 w-5 h-5" /> Forças Globais: Numerologia</h3>
-          <div className="space-y-3"><div className="flex justify-between items-center bg-white/80 p-3 rounded-xl border border-slate-100 shadow-sm"><span className="text-[11px] md:text-xs text-slate-500">Expressão</span><strong className="text-sm md:text-base text-slate-800">{result.dadosGlobais.numerologia.expressao}</strong></div><div className="flex justify-between items-center bg-white/80 p-3 rounded-xl border border-slate-100 shadow-sm"><span className="text-[11px] md:text-xs text-slate-500">Caminho</span><strong className="text-sm md:text-base text-slate-800">{result.dadosGlobais.numerologia.caminhoVida}</strong></div><div className="flex justify-between items-center bg-white/80 p-3 rounded-xl border border-slate-100 shadow-sm"><span className="text-[11px] md:text-xs text-slate-500">Hora</span><strong className="text-sm md:text-base text-slate-800">{result.dadosGlobais.numerologia.vibracaoHora}</strong></div></div>
+          <h3 className="text-lg md:text-xl font-bold text-blue-600 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Hash className="text-blue-500 w-5 h-5" /> Forças Globais: Numerologia</h3>
+          <div className="space-y-3"><div className="flex justify-between items-center bg-white/80 p-3 rounded-xl border border-slate-100 shadow-sm"><span className="text-[11px] md:text-xs text-slate-500">Expressão</span><strong className="text-sm md:text-base text-slate-800">{String(result.dadosGlobais.numerologia.expressao)}</strong></div><div className="flex justify-between items-center bg-white/80 p-3 rounded-xl border border-slate-100 shadow-sm"><span className="text-[11px] md:text-xs text-slate-500">Caminho</span><strong className="text-sm md:text-base text-slate-800">{String(result.dadosGlobais.numerologia.caminhoVida)}</strong></div><div className="flex justify-between items-center bg-white/80 p-3 rounded-xl border border-slate-100 shadow-sm"><span className="text-[11px] md:text-xs text-slate-500">Hora</span><strong className="text-sm md:text-base text-slate-800">{String(result.dadosGlobais.numerologia.vibracaoHora)}</strong></div></div>
         </div>
       </div>
 
@@ -238,8 +240,8 @@ export default function App() {
     e.preventDefault(); setLoading(true); setAnaliseIa(''); setResult(null);
     try {
       const res = await fetch('/api/calcular', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
-      const data = await res.json() as { success: boolean; error?: string };
-      if (data.success) setResult(data as unknown as ResultData); else alert(data.error);
+      const data = await res.json() as { success: boolean; error?: string } & ResultData;
+      if (data.success) { setResult(data); } else { alert(String(data.error)); }
     } catch { alert("Erro de conexão."); }
     setLoading(false);
   };

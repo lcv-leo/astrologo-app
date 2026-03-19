@@ -1,5 +1,5 @@
-interface Env { GEMINI_API_KEY: string; DB: { prepare: (query: string) => { bind: (...args: unknown[]) => { run: () => Promise<void> } } }; }
-interface Context { request: Request; env: Env; }
+interface EnvBindings { GEMINI_API_KEY: string; DB: { prepare: (query: string) => { bind: (...args: unknown[]) => { run: () => Promise<void> } } }; }
+interface Context { request: Request; env: EnvBindings; }
 
 export async function onRequestPost(context: Context) {
   const { request, env } = context;
@@ -19,7 +19,7 @@ Siga EXATAMENTE esta mesma ordem! Faça DUAS análises profundas e separadas:
 Integre a Astrologia, a Umbanda Esotérica da Raiz de Guiné de W. W. da Matta e Silva, os Tatwas e a Psicologia Analítica de C. G. Jung. Ao final, efetue uma síntese conjunta comparativa.
 
 ATENÇÃO RIGOROSA 1: Analise a influência do "Astro" (o 6º card da Umbanda, que representa a Hora Planetária do minuto exato baseada na Sequência dos Caldeus) e sua sinergia com o Orixá regente.
-ATENÇÃO RIGOROSA 2: Inclua de forma explícita e obrigatória a informação de que a Coroa calculada via data de nascimento serve para revelar a Vibração Original "Teórica/Magnética". Informe claramente que, por necessidades e cobranças cármicas de encarnação, a entidade que atua "de frente" pode pertencer a outra Linha, e que a verdadeira coroa e guias de frente só podem ser atestados de forma inequívoca e prática no terreiro através da "Lei de Pemba" (sinais riscados com Flecha, Chave e Raiz) e pelo Mestre de Iniciação.
+ATENÇÃO RIGOROSA 2: Inclua de forma explícita e obrigatória a informação de que a Coroa calculada via data de nascimento serve para revelar a Vibração Original "Teórica/Magnética". Informe claramente que, por necessidades e cobranças cármicas de encarnação, a entidade que atua "de frente" pode pertencer a outra Linha, e que a verdadeira coroa e guias de frente só podem ser atestados de forma inequívoca e prática no terreiro através da "Lei de Pemba" e pelo Mestre de Iniciação.
 
 Retorne APENAS HTML formatado em <p>, <strong>, <ul>, <li>. Sem marcações markdown ou blocos de código e com os títulos alinhados à esquerda e os textos dos parágrafos justificados e com recuo de primeira linha de cada parágrafo.`;
 

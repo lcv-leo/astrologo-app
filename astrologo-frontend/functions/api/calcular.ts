@@ -1,5 +1,6 @@
-interface Env { GEMINI_API_KEY: string; DB: { prepare: (query: string) => { bind: (...args: unknown[]) => { run: () => Promise<void> } } }; }
-interface Context { request: Request; env: Env; }
+interface EnvBindings { GEMINI_API_KEY: string; DB: { prepare: (query: string) => { bind: (...args: unknown[]) => { run: () => Promise<void> } } }; }
+interface Context { request: Request; env: EnvBindings; }
+interface AstroInfo { nome: string; decanato: number; }
 
 export async function onRequestPost(context: Context) {
     const { request, env } = context;
@@ -10,7 +11,7 @@ export async function onRequestPost(context: Context) {
         const tz = -3;
 
         const prompt = `Retorne APENAS um JSON com lat, lon, sunrise e sunset de "${localNascimento}" no dia ${dataNascimento} considerando o fuso horário oficial de Brasília (UTC-3). Ex: {"lat":-22.9068,"lon":-43.1729,"sunrise":"06:05","sunset":"18:15"}`;
-        let lat = -22.9068, lon = -43.1729, srH = 6, srM = 5, ssH = 18, ssM = 0;
+        let lat = -22.9068; let lon = -43.1729; let srH = 6; let srM = 5; let ssH = 18; let ssM = 0;
 
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key=${env.GEMINI_API_KEY}`, {
@@ -24,10 +25,11 @@ export async function onRequestPost(context: Context) {
             const jsonText = parts?.[0]?.text || "{}";
             const match = jsonText.match(/\{[\s\S]*\}/);
             if (match) {
-                const geo = JSON.parse(match[0]);
-                lat = parseFloat(geo.lat) || lat; lon = parseFloat(geo.lon) || lon;
-                const srSplit = (geo.sunrise || "06:05").split(':').map(Number); srH = srSplit[0]; srM = srSplit[1];
-                const ssSplit = (geo.sunset || "18:00").split(':').map(Number); ssH = ssSplit[0]; ssM = ssSplit[1];
+                const geo = JSON.parse(match[0]) as Record<string, string | number>;
+                lat = typeof geo.lat === 'string' ? parseFloat(geo.lat) : Number(geo.lat) || lat;
+                lon = typeof geo.lon === 'string' ? parseFloat(geo.lon) : Number(geo.lon) || lon;
+                const srSplit = (String(geo.sunrise || "06:05")).split(':').map(Number); srH = srSplit[0]; srM = srSplit[1];
+                const ssSplit = (String(geo.sunset || "18:00")).split(':').map(Number); ssH = ssSplit[0]; ssM = ssSplit[1];
             }
         } catch { console.log("Usando Fallback Geográfico (RJ)."); }
 
@@ -66,7 +68,7 @@ export async function onRequestPost(context: Context) {
         const ascLon = wrap(Math.atan2(Math.cos(local_sidereal * rad), -(Math.sin(local_sidereal * rad) * Math.cos(eps * rad) + Math.tan(lat * rad) * Math.sin(eps * rad))) / rad);
 
         const signosTropicais = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem", "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"];
-        const getTropicalInfo = (lonVal: number) => {
+        const getTropicalInfo = (lonVal: number): AstroInfo => {
             const idx = Math.floor(wrap(lonVal) / 30);
             const decanato = Math.floor((wrap(lonVal) % 30) / 10);
             return { nome: signosTropicais[idx], decanato: decanato > 2 ? 2 : decanato };
@@ -81,7 +83,7 @@ export async function onRequestPost(context: Context) {
             { nome: "Sagitário", inicio: 266.3, fim: 299.7 }, { nome: "Capricórnio", inicio: 299.7, fim: 327.6 },
             { nome: "Aquário", inicio: 327.6, fim: 351.5 }
         ];
-        const getIauInfo = (tLon: number) => {
+        const getIauInfo = (tLon: number): AstroInfo => {
             const shift = (ano - 2000) * (50.29 / 3600);
             const j2000Lon = wrap(tLon - shift);
             let found = IAU_BORDERS[0];
@@ -113,7 +115,6 @@ export async function onRequestPost(context: Context) {
 
         const dataLocalObj = new Date(Date.UTC(ano, mes - 1, dia, 12, 0, 0));
         const diaDaSemanaIdx = dataLocalObj.getUTCDay();
-
         const orixasVibracaoMap = ["Orixalá", "Yemanjá", "Ogum", "Yori", "Xangô", "Oxossi", "Yorimá"];
         const orixaDia = orixasVibracaoMap[diaDaSemanaIdx];
         const orixaHora = getOrixaHora(hLocal + (mLocal / 60));
@@ -135,7 +136,6 @@ export async function onRequestPost(context: Context) {
             }
 
             const hourLength = periodDurationMins / 12 || 60;
-
             const hourIndex = Math.floor(minsFromStart / hourLength);
             const chaldean = ["Saturno", "Júpiter", "Marte", "Sol", "Vênus", "Mercúrio", "Lua"];
             const dayRulerPlanets = ["Sol", "Lua", "Marte", "Mercúrio", "Júpiter", "Vênus", "Saturno"];
@@ -143,9 +143,8 @@ export async function onRequestPost(context: Context) {
             const rulerOfDay = dayRulerPlanets[dayOfWeekAstrological];
             const startIndex = chaldean.indexOf(rulerOfDay);
             const totalHoursPassed = isDay ? hourIndex : 12 + hourIndex;
-            const currentPlanetIndex = (startIndex + totalHoursPassed) % 7;
 
-            return chaldean[currentPlanetIndex];
+            return chaldean[totalHoursPassed % 7];
         };
 
         const planetaRegenteHora = getPlanetaryHour();
@@ -153,7 +152,7 @@ export async function onRequestPost(context: Context) {
         const orixaHoraPlanetaria = planetaParaOrixa[planetaRegenteHora] || "Orixalá";
         const planetaSimbolos: Record<string, string> = { "Sol": "☀️", "Lua": "🌙", "Marte": "♂️", "Mercúrio": "☿️", "Júpiter": "♃", "Vênus": "♀️", "Saturno": "♄" };
 
-        const gerarDadosSistema = (infoSol: Record<string, any>, infoLua: Record<string, any>, infoAsc: Record<string, any>, infoMc: Record<string, any>) => {
+        const gerarDadosSistema = (infoSol: AstroInfo, infoLua: AstroInfo, infoAsc: AstroInfo, infoMc: AstroInfo) => {
             const orixaCoroa = tabelaV[infoSol.nome]?.[0] || "Orixalá";
             const orixaFrente = tabelaV[infoMc.nome]?.[0] || "Orixalá";
             const orixaDecanato = tabelaV[infoSol.nome]?.[infoSol.decanato] || "Orixalá";

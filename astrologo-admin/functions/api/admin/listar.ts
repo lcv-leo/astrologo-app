@@ -1,5 +1,5 @@
-interface Env { DB: { prepare: (q: string) => { all: () => Promise<{ results: unknown[] }> } }; }
-interface Context { env: Env; }
+interface EnvBindings { DB: { prepare: (q: string) => { all: () => Promise<{ results: unknown[] }> } }; }
+interface Context { env: EnvBindings; }
 
 export async function onRequestGet(context: Context) {
     const { env } = context;
