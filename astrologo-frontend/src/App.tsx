@@ -172,15 +172,133 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
   };
 
   const gerarHtmlRelatorio = (): string => {
-    let h = `<div style="font-family: sans-serif; color: #1e293b; background-color: #f8fafc; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px;"><h2 style="color: #d97706; text-align: center; text-transform: uppercase;">🌌 Dossiê Astrológico</h2><p style="text-align: center; font-size: 18px; margin-bottom: 5px;"><strong>${result.query.nome}</strong></p><p style="text-align: center; font-size: 14px; color: #64748b; margin-top: 0;">${result.query.localNascimento}<br/>${formatarData(result.query.dataNascimento)} às ${result.query.horaNascimento}</p><h3 style="color: #0ea5e9; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">🌬️ Forças Globais</h3><p><strong>Tatwa Principal:</strong> ${result.dadosGlobais.tatwa.principal} <br/><strong>Sub-tatwa:</strong> ${result.dadosGlobais.tatwa.sub}</p><p><strong>Numerologia:</strong> Expressão ${result.dadosGlobais.numerologia.expressao} | Caminho ${result.dadosGlobais.numerologia.caminhoVida} | Hora ${result.dadosGlobais.numerologia.vibracaoHora}</p>`;
-    const extrairHtml = (titulo: string, dados: DadosSistema, cor: string) => {
-      return `<h3 style="color: ${cor}; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 25px;">${titulo}</h3><p><strong>Astros:</strong> Sol em ${dados.astrologia[0].signo} | Asc em ${dados.astrologia[1].signo} | Lua em ${dados.astrologia[2].signo} | MC em ${dados.astrologia[3].signo}</p><p><strong>Umbanda:</strong> Coroa: ${dados.umbanda[0].orixa} | Adjuntó: ${dados.umbanda[1].orixa} | Frente: ${dados.umbanda[2].orixa}<br/>Decanato: ${dados.umbanda[3].orixa} | FAIXA HORÁRIA (3H): ${dados.umbanda[4].orixa} | ${formatPosicaoLabel(dados.umbanda[5].posicao)}: ${dados.umbanda[5].orixa}</p>`;
+    if (!result) return '';
+
+    const fontFamily = "font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;";
+    const boxShadow = "box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.05);";
+
+    const blocoAstrologiaHtml = (dados: AstroData[]) => dados.map(a => `
+      <div style="background-color: #ffffff; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9; ${boxShadow} text-align: left;">
+        <p style="font-size: 11px; color: #64748b; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px;">${a.astro}</p>
+        <p style="font-size: 15px; color: #1e293b; margin: 0; font-weight: bold;">${a.simbolo} ${a.signo}</p>
+      </div>
+    `).join('');
+
+    const blocoUmbandaHtml = (dados: UmbandaData[], isTropical: boolean) => {
+      const color = isTropical ? '#ea580c' : '#4f46e5';
+      const bgColor = isTropical ? 'rgba(251, 146, 60, 0.1)' : 'rgba(99, 102, 241, 0.1)';
+      const borderColor = isTropical ? '#fed7aa' : '#c7d2fe';
+
+      return dados.map(u => `
+        <div style="background-color: #ffffff; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9; ${boxShadow} display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 100%; text-align: center;">
+          <span style="font-size: 32px; margin-bottom: 8px;">${u.simbolo}</span>
+          <p style="font-size: 10px; color: #64748b; margin: 0 0 8px 0; font-weight: bold; text-transform: uppercase; line-height: 1.2;">${formatPosicaoLabel(u.posicao)}</p>
+          <div style="background-color: ${bgColor}; color: ${color}; border: 1px solid ${borderColor}; border-radius: 8px; padding: 8px 4px; width: 100%; margin-top: auto;">
+            <p style="margin: 0; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">${u.orixa}</p>
+          </div>
+        </div>
+      `).join('');
     };
-    h += extrairHtml("🌞 Módulo I: Tropical Sazonal (A Persona)", result.dadosTropical, "#ea580c");
-    h += `<div style="text-align: center; margin: 30px 0; padding: 20px; border: 1px solid #c7d2fe; background-color: #e0e7ff; border-radius: 12px;"><h3 style="color: #4f46e5; margin-top: 0; margin-bottom: 8px; text-transform: uppercase;">✨ A Verdade Oculta ✨</h3><p style="color: #475569; font-size: 14px; margin: 0;">O módulo tropical acima revelou a sua máscara terrena (Persona). Desfaça a ilusão sazonal e contemple abaixo a sua verdadeira assinatura estelar.</p></div>`;
-    h += extrairHtml("⭐ Módulo II: Astronômico Constelacional (A Alma)", result.dadosAstronomica, "#d97706");
-    if (analiseIa) { h += `<h3 style="color: #8b5cf6; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 30px;">🧠 Síntese da Inteligência Artificial</h3><div style="line-height: 1.6; color: #334155; text-align: justify;">${analiseIa}</div>`; }
-    h += `<p style="text-align:center; font-size: 12px; color:#94a3b8; margin-top:30px; border-top: 1px solid #e2e8f0; padding-top: 15px;"><em>Gerado via Oráculo Celestial</em></p></div>`; return h;
+
+    const renderBlocoAstrologicoEmail = (titulo: string, dadosAstrologia: AstroData[], dadosUmbanda: UmbandaData[], isTropical: boolean) => {
+        const titleColor = isTropical ? '#f97316' : '#4338ca';
+        const borderColor = isTropical ? '#fb923c' : '#6366f1';
+        return `
+            <div style="margin-top: 40px; padding-top: 40px; border-top: 1px solid ${borderColor};">
+                <h2 style="font-size: 28px; font-weight: 900; color: ${titleColor}; margin: 0 0 32px 0;">${titulo}</h2>
+                
+                <div style="background-color: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); padding: 32px; border-radius: 24px; border: 1px solid #ffffff; ${boxShadow} margin-bottom: 32px;">
+                    <h3 style="font-size: 20px; font-weight: bold; color: #1e293b; margin: 0 0 24px 0; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">I. Astrologia (${isTropical ? '12 Signos' : '13 Signos'})</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px;">
+                        ${blocoAstrologiaHtml(dadosAstrologia)}
+                    </div>
+                </div>
+
+                <div style="background-color: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); padding: 32px; border-radius: 24px; border: 1px solid #ffffff; ${boxShadow}">
+                    <h3 style="font-size: 20px; font-weight: bold; color: ${titleColor}; margin: 0 0 24px 0; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">II. Umbanda</h3>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                        ${blocoUmbandaHtml(dadosUmbanda, isTropical)}
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+
+    let h = `
+    <!DOCTYPE html>
+    <html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Dossiê Astrológico</title>
+        <style>
+          @media (max-width: 600px) {
+            .container { padding: 15px !important; }
+            .grid-2 { grid-template-columns: 1fr !important; }
+          }
+        </style>
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f1f5f9; ${fontFamily}">
+        <div class="container" style="background-color: #f1f5f9; background-image: radial-gradient(ellipse at top, #e0e7ff 0%, #f1f5f9 50%, #fdf4ff 100%); max-width: 800px; margin: auto; padding: 40px;">
+            
+            <header style="text-align: center; margin-bottom: 40px;">
+                <h1 style="font-size: 36px; font-weight: 900; letter-spacing: -1px; color: transparent; background-clip: text; -webkit-background-clip: text; background-image: linear-gradient(to right, #3b82f6, #6366f1); margin: 0 0 8px 0;">Diagnóstico Astrológico</h1>
+                <p style="font-size: 18px; color: #475569; margin: 0;">Umbanda Esotérica da Raiz de Guiné</p>
+            </header>
+
+            <div style="background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 32px; border-radius: 24px; border: 1px solid #ffffff; ${boxShadow} text-align: center; margin-bottom: 40px;">
+                <h2 style="font-size: 24px; font-weight: 800; color: #1e293b; margin: 0 0 8px 0;">${result.query.nome}</h2>
+                <p style="font-size: 16px; color: #475569; margin: 0;">${result.query.localNascimento}</p>
+                <p style="font-size: 16px; color: #475569; margin: 0;">${formatarData(result.query.dataNascimento)} às ${result.query.horaNascimento}</p>
+            </div>
+
+            <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 40px;">
+                <div style="background-color: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); padding: 24px; border-radius: 24px; border: 1px solid #ffffff; ${boxShadow}">
+                    <h3 style="font-size: 20px; font-weight: bold; color: #2563eb; margin: 0 0 16px 0; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">🌬️ Forças Globais: Tatwas</h3>
+                    <div style="font-size: 16px; color: #334155;">
+                        <div style="display: flex; justify-content: space-between; padding: 12px; background-color: #f8fafc; border-radius: 8px; margin-bottom: 8px;"><span>Principal</span> <strong style="color: #1e293b;">${result.dadosGlobais.tatwa.principal}</strong></div>
+                        <div style="display: flex; justify-content: space-between; padding: 12px; background-color: #f8fafc; border-radius: 8px;"><span>Sub-tatwa</span> <strong style="color: #1e293b;">${result.dadosGlobais.tatwa.sub}</strong></div>
+                    </div>
+                </div>
+                <div style="background-color: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); padding: 24px; border-radius: 24px; border: 1px solid #ffffff; ${boxShadow}">
+                    <h3 style="font-size: 20px; font-weight: bold; color: #2563eb; margin: 0 0 16px 0; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">#️⃣ Forças Globais: Numerologia</h3>
+                     <div style="font-size: 16px; color: #334155;">
+                        <div style="display: flex; justify-content: space-between; padding: 12px; background-color: #f8fafc; border-radius: 8px; margin-bottom: 8px;"><span>Expressão</span> <strong style="color: #1e293b;">${result.dadosGlobais.numerologia.expressao}</strong></div>
+                        <div style="display: flex; justify-content: space-between; padding: 12px; background-color: #f8fafc; border-radius: 8px; margin-bottom: 8px;"><span>Caminho</span> <strong style="color: #1e293b;">${result.dadosGlobais.numerologia.caminhoVida}</strong></div>
+                        <div style="display: flex; justify-content: space-between; padding: 12px; background-color: #f8fafc; border-radius: 8px;"><span>Hora</span> <strong style="color: #1e293b;">${result.dadosGlobais.numerologia.vibracaoHora}</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            ${renderBlocoAstrologicoEmail("Módulo I: Astrológico Tropical", result.dadosTropical.astrologia, result.dadosTropical.umbanda, true)}
+            
+            <div style="margin: 60px 0; text-align: center; position: relative;">
+              <div style="position: absolute; inset: 0; background-image: linear-gradient(to right, rgba(251, 146, 60, 0.2), rgba(99, 102, 241, 0.2), rgba(52, 211, 153, 0.2)); border-radius: 24px; filter: blur(20px);"></div>
+              <div style="position: relative; background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); padding: 40px; border-radius: 24px; ${boxShadow}">
+                  <p style="font-size: 32px; margin: 0 0 12px 0;">✨</p>
+                  <h3 style="font-size: 24px; font-weight: 900; color: #4f46e5; margin: 0 0 8px 0;">Agora, a Verdade Oculta!</h3>
+                  <p style="font-size: 16px; color: #475569; margin: 0; max-width: 500px; margin-left: auto; margin-right: auto;">O módulo tropical acima revelou a sua <strong>máscara terrena (Persona)</strong>. Desfaça a ilusão sazonal e contemple abaixo a sua <strong>verdadeira assinatura estelar</strong>.</p>
+              </div>
+            </div>
+
+            ${renderBlocoAstrologicoEmail("Módulo II: Astronômico Constelacional", result.dadosAstronomica.astrologia, result.dadosAstronomica.umbanda, false)}
+
+            ${analiseIa ? `
+            <div style="margin-top: 60px; padding: 40px; background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border-radius: 24px; border: 1px solid #ffffff; ${boxShadow}">
+                <h3 style="font-size: 28px; font-weight: 900; color: transparent; background-clip: text; -webkit-background-clip: text; background-image: linear-gradient(to right, #3b82f6, #4f46e5); margin: 0 0 24px 0; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">🧠 Síntese do Mestre (IA)</h3>
+                <div style="font-size: 16px; line-height: 1.7; color: #334155;">${analiseIa}</div>
+            </div>
+            ` : ''}
+
+            <footer style="text-align: center; margin-top: 60px; padding-top: 20px; border-top: 1px solid #dde4ee;">
+                <p style="font-size: 12px; color: #64748b; margin: 0;">Gerado via Oráculo Celestial v${APP_VERSION}</p>
+            </footer>
+
+        </div>
+    </body>
+    </html>
+    `;
+    return h;
   };
 
   const copiar = () => { navigator.clipboard.writeText(gerarTextoRelatorio()); showNotification("Dossiê copiado para a memória!", 'success'); };
