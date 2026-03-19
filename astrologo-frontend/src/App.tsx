@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Compass, Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, Info, Star, MapPin, User, Calendar, Clock, X, HelpCircle, Mail, Send, RotateCcw } from 'lucide-react';
 import { useNotification } from './components/Notification';
 
-const APP_VERSION = "2.10.00";
+const APP_VERSION = "2.13.00";
 
 interface AstroData { astro: string; signo: string; simbolo: string; }
 interface UmbandaData { posicao: string; orixa: string; simbolo: string; }
@@ -159,16 +159,62 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
   const { showNotification } = useNotification();
 
   const gerarTextoRelatorio = (): string => {
-    let t = `🌌 *DIAGNÓSTICO ASTROLÓGICO E ESOTÉRICO* 🌌\n\n👤 *Consulente:* ${result.query.nome}\n📍 *Local:* ${result.query.localNascimento}\n📅 *Nascimento:* ${formatarData(result.query.dataNascimento)} às ${result.query.horaNascimento}\n\n`;
-    t += `🌬️ *FORÇAS GLOBAIS*\n• Tatwa: ${result.dadosGlobais.tatwa.principal} / ${result.dadosGlobais.tatwa.sub}\n• Numerologia: Expressão ${result.dadosGlobais.numerologia.expressao} | Caminho ${result.dadosGlobais.numerologia.caminhoVida} | Hora ${result.dadosGlobais.numerologia.vibracaoHora}\n\n`;
-    t += `🌞 *MÓDULO I: TROPICAL SAZONAL (12 Signos)* - A Persona\n☀️ Sol: ${result.dadosTropical.astrologia[0].signo} | ⬆️ Asc: ${result.dadosTropical.astrologia[1].signo} | 🌙 Lua: ${result.dadosTropical.astrologia[2].signo} | 🔭 MC: ${result.dadosTropical.astrologia[3].signo}\n👑 Coroa: ${result.dadosTropical.umbanda[0].orixa} | 🌊 Adjuntó: ${result.dadosTropical.umbanda[1].orixa} | 🏹 Frente: ${result.dadosTropical.umbanda[2].orixa}\n🌟 Decanato: ${result.dadosTropical.umbanda[3].orixa} | ⏳ FAIXA HORÁRIA (3H): ${result.dadosTropical.umbanda[4].orixa} | 🪐 ${formatPosicaoLabel(result.dadosTropical.umbanda[5].posicao)}: ${result.dadosTropical.umbanda[5].orixa}\n\n`;
-    t += `✨ *AGORA, A VERDADE OCULTA...* ✨\n_O módulo tropical acima revelou a sua máscara terrena (Persona). Desfaça a ilusão sazonal e contemple abaixo a sua verdadeira assinatura estelar:_\n\n`;
-    t += `⭐ *MÓDULO II: ASTRONÔMICO CONSTELACIONAL (13 Signos)* - A Alma\n☀️ Sol: ${result.dadosAstronomica.astrologia[0].signo} | ⬆️ Asc: ${result.dadosAstronomica.astrologia[1].signo} | 🌙 Lua: ${result.dadosAstronomica.astrologia[2].signo} | 🔭 MC: ${result.dadosAstronomica.astrologia[3].signo}\n👑 Coroa: ${result.dadosAstronomica.umbanda[0].orixa} | 🌊 Adjuntó: ${result.dadosAstronomica.umbanda[1].orixa} | 🏹 Frente: ${result.dadosAstronomica.umbanda[2].orixa}\n🌟 Decanato: ${result.dadosAstronomica.umbanda[3].orixa} | ⏳ FAIXA HORÁRIA (3H): ${result.dadosAstronomica.umbanda[4].orixa} | 🪐 ${formatPosicaoLabel(result.dadosAstronomica.umbanda[5].posicao)}: ${result.dadosAstronomica.umbanda[5].orixa}\n\n`;
+    if (!result) return '';
+
+    const divider = '\n' + '─'.repeat(28) + '\n';
+
+    let t = `*🌌 DIAGNÓSTICO ASTROLÓGICO E ESOTÉRICO 🌌*\n\n`;
+    t += `*Consulente:* ${result.query.nome}\n`;
+    t += `*Local:* ${result.query.localNascimento}\n`;
+    t += `*Nascimento:* ${formatarData(result.query.dataNascimento)} às ${result.query.horaNascimento}\n`;
+
+    t += divider;
+    t += `*🌬️ FORÇAS GLOBAIS*\n\n`;
+    t += `*Tatwas:*\n`;
+    t += `  • Principal: *${result.dadosGlobais.tatwa.principal}*\n`;
+    t += `  • Sub-tatwa: *${result.dadosGlobais.tatwa.sub}*\n\n`;
+    t += `*Numerologia:*\n`;
+    t += `  • Expressão: *${result.dadosGlobais.numerologia.expressao}*\n`;
+    t += `  • Caminho da Vida: *${result.dadosGlobais.numerologia.caminhoVida}*\n`;
+    t += `  • Vibração da Hora: *${result.dadosGlobais.numerologia.vibracaoHora}*\n`;
+
+    const blocoTexto = (dados: DadosSistema) => {
+        let texto = `\n*Astrologia:*\n`;
+        texto += `  • ☀️ Sol: *${dados.astrologia[0].signo}*\n`;
+        texto += `  • ⬆️ Ascendente: *${dados.astrologia[1].signo}*\n`;
+        texto += `  • 🌙 Lua: *${dados.astrologia[2].signo}*\n`;
+        texto += `  • 🔭 Meio do Céu: *${dados.astrologia[3].signo}*\n\n`;
+        texto += `*Umbanda:*\n`;
+        texto += `  • 👑 Coroa (Orixá Ancestral): *${dados.umbanda[0].orixa}*\n`;
+        texto += `  • 🌊 Adjuntó (Orixá de Frente): *${dados.umbanda[1].orixa}*\n`;
+        texto += `  • 🏹 Frente (Orixá de Trabalho): *${dados.umbanda[2].orixa}*\n`;
+        texto += `  • 🌟 Decanato (Regente Secundário): *${dados.umbanda[3].orixa}*\n`;
+        texto += `  • ⏳ Faixa Horária (Regente da Hora): *${dados.umbanda[4].orixa}*\n`;
+        texto += `  • 🪐 ${formatPosicaoLabel(dados.umbanda[5].posicao)}: *${dados.umbanda[5].orixa}*\n`;
+        return texto;
+    };
+
+    t += divider;
+    t += `*🌞 MÓDULO I: ASTROLÓGICO TROPICAL (A PERSONA)*\n`;
+    t += blocoTexto(result.dadosTropical);
+
+    t += divider;
+    t += `*✨ AGORA, A VERDADE OCULTA... ✨*\n\n`;
+    t += `_O módulo tropical acima revelou a sua máscara terrena (Persona). Desfaça a ilusão sazonal e contemple abaixo a sua *verdadeira assinatura estelar*._\n`;
+    t += divider;
+
+    t += `*⭐ MÓDULO II: ASTRONÔMICO CONSTELACIONAL (A ALMA)*\n`;
+    t += blocoTexto(result.dadosAstronomica);
+
     if (analiseIa) {
       const iaTxt = analiseIa.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<strong>(.*?)<\/strong>/gi, '*$1*').replace(/<b>(.*?)<\/b>/gi, '*$1*').replace(/<em>(.*?)<\/em>/gi, '_$1_').replace(/<i>(.*?)<\/i>/gi, '_$1_').replace(/<li>(.*?)<\/li>/gi, '• $1\n').replace(/<\/ul>/gi, '\n').replace(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi, '\n*$1*\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
-      t += `🧠 *SÍNTESE DA INTELIGÊNCIA ARTIFICIAL*\n\n` + iaTxt.replace(/\n{3,}/g, '\n\n').trim() + `\n\n`;
+      t += divider;
+      t += `*🧠 SÍNTESE DO MESTRE (IA)*\n\n` + iaTxt.replace(/\n{3,}/g, '\n\n').trim() + `\n`;
     }
-    t += `✨ _Gerado via Oráculo Celestial_ ✨`; return t;
+
+    t += divider;
+    t += `✨ _Gerado via Oráculo Celestial v${APP_VERSION}_ ✨`;
+    return t;
   };
 
   const gerarHtmlRelatorio = (): string => {
@@ -224,7 +270,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
         `;
     };
 
-    let h = `
+    const h = `
     <!DOCTYPE html>
     <html lang="pt-br">
     <head>

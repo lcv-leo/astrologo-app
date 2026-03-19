@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNotification } from './components/Notification';
 import { Database, RefreshCw, Trash2, Star, Sun, Moon, Sparkles, Wind, Hash, BrainCircuit } from 'lucide-react';
 
-const ADMIN_VERSION = "2.11.00";
+const ADMIN_VERSION = "2.12.00";
 
 interface AstroData { astro: string; signo: string; simbolo: string; }
 interface UmbandaData { posicao: string; orixa: string; simbolo: string; }
