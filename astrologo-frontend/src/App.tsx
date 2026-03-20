@@ -477,7 +477,7 @@ export default function App() {
           </div>
           <div className="flex flex-col gap-2 w-full">
             <label htmlFor="dataNascimento" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><Calendar className="w-4 h-4 text-blue-500" /> DATA DE NASCIMENTO</label>
-            <input id="dataNascimento" name="birthDate" required type="date" autoComplete="bday" aria-label="Data de Nascimento" title="Data de Nascimento" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium [color-scheme:light]" value={formData.dataNascimento} onChange={e => setFormData({ ...formData, dataNascimento: e.target.value })} />
+            <input id="dataNascimento" name="birthDate" required type="date" autoComplete="on" aria-label="Data de Nascimento" title="Data de Nascimento" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium [color-scheme:light]" value={formData.dataNascimento} onChange={e => setFormData({ ...formData, dataNascimento: e.target.value })} />
           </div>
           <div className="flex flex-col gap-2 w-full">
             <label htmlFor="horaNascimento" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><Clock className="w-4 h-4 text-blue-500" /> HORÁRIO DE NASCIMENTO <span className="normal-case text-slate-400 font-medium tracking-normal">(HH:mm)</span></label>
