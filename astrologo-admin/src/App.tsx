@@ -78,7 +78,7 @@ const EmailModal: React.FC<EmailModalProps> = ({ isOpen, onClose, onSend, isSend
         <h2 className="text-xl md:text-2xl font-black text-blue-600 flex items-center gap-3 mb-4"><Mail className="w-6 h-6" /> Enviar Dossiê Celestial</h2>
         <p className="text-slate-600 text-sm md:text-base mb-6 leading-relaxed">Insira o endereço de e-mail para receber o relatório astrológico completo e a análise da IA.</p>
         <label htmlFor="emailConsulente" className="sr-only">Endereço de E-mail</label>
-        <input type="email" id="emailConsulente" placeholder="usuario@email.com" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition shadow-inner mb-6 text-base" value={email} onChange={e => setEmail(e.target.value)} disabled={isSending} />
+        <input type="email" id="emailConsulente" name="email" autoComplete="email" placeholder="usuario@email.com" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition shadow-inner mb-6 text-base" value={email} onChange={e => setEmail(e.target.value)} disabled={isSending} />
         <button onClick={() => { if (isValidEmail(email)) onSend(email.trim()); }} disabled={isSending || !isValidEmail(email)} aria-label="Disparar E-mail" className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold p-4 rounded-xl flex justify-center items-center gap-3 transition-all disabled:opacity-50 uppercase tracking-wider shadow-md text-sm md:text-base">
           {isSending ? <Sparkles className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />} {isSending ? 'Transmitindo...' : 'Disparar E-mail'}
         </button>
@@ -590,8 +590,8 @@ export default function App() {
                 ) : ratePolicies.map((policy) => (
                   <div key={policy.route} className="rounded-2xl border border-rose-200/60 bg-rose-50/50 p-3 md:p-4">
                     <div className="flex items-center justify-between gap-3 mb-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked={policy.enabled} onChange={(e) => atualizarPolitica(policy.route, { enabled: e.target.checked })} className="w-4 h-4 accent-rose-600" />
+                      <label htmlFor={`policy-enabled-${policy.route}`} className="flex items-center gap-2 cursor-pointer">
+                        <input id={`policy-enabled-${policy.route}`} name={`policyEnabled_${policy.route}`} type="checkbox" autoComplete="off" checked={policy.enabled} onChange={(e) => atualizarPolitica(policy.route, { enabled: e.target.checked })} className="w-4 h-4 accent-rose-600" />
                         <span className="text-xs md:text-sm font-bold text-rose-700">Habilitar Escudo ({routeLabel[policy.route]})</span>
                       </label>
                       <button
@@ -615,12 +615,12 @@ export default function App() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[10px] md:text-[11px] font-bold uppercase tracking-wide text-rose-700">Máx. requisições por IP</label>
-                        <input type="number" min={1} max={500} title={`Máximo de requisições por IP para ${routeLabel[policy.route]}`} placeholder="Ex: 10" value={policy.max_requests} onChange={(e) => atualizarPolitica(policy.route, { max_requests: Math.max(1, Number(e.target.value) || 1) })} className="w-full mt-1 p-2.5 bg-white border border-rose-200 rounded-xl text-slate-800" />
+                        <label htmlFor={`policy-max-requests-${policy.route}`} className="text-[10px] md:text-[11px] font-bold uppercase tracking-wide text-rose-700">Máx. requisições por IP</label>
+                        <input id={`policy-max-requests-${policy.route}`} name={`policyMaxRequests_${policy.route}`} type="number" min={1} max={500} autoComplete="off" inputMode="numeric" title={`Máximo de requisições por IP para ${routeLabel[policy.route]}`} placeholder="Ex: 10" value={policy.max_requests} onChange={(e) => atualizarPolitica(policy.route, { max_requests: Math.max(1, Number(e.target.value) || 1) })} className="w-full mt-1 p-2.5 bg-white border border-rose-200 rounded-xl text-slate-800" />
                       </div>
                       <div>
-                        <label className="text-[10px] md:text-[11px] font-bold uppercase tracking-wide text-rose-700">Janela (minutos)</label>
-                        <input type="number" min={1} max={1440} title={`Janela em minutos para ${routeLabel[policy.route]}`} placeholder="Ex: 15" value={policy.window_minutes} onChange={(e) => atualizarPolitica(policy.route, { window_minutes: Math.max(1, Number(e.target.value) || 1) })} className="w-full mt-1 p-2.5 bg-white border border-rose-200 rounded-xl text-slate-800" />
+                        <label htmlFor={`policy-window-minutes-${policy.route}`} className="text-[10px] md:text-[11px] font-bold uppercase tracking-wide text-rose-700">Janela (minutos)</label>
+                        <input id={`policy-window-minutes-${policy.route}`} name={`policyWindowMinutes_${policy.route}`} type="number" min={1} max={1440} autoComplete="off" inputMode="numeric" title={`Janela em minutos para ${routeLabel[policy.route]}`} placeholder="Ex: 15" value={policy.window_minutes} onChange={(e) => atualizarPolitica(policy.route, { window_minutes: Math.max(1, Number(e.target.value) || 1) })} className="w-full mt-1 p-2.5 bg-white border border-rose-200 rounded-xl text-slate-800" />
                       </div>
                     </div>
                   </div>

@@ -72,7 +72,7 @@ const EmailModal: React.FC<EmailModalProps> = ({ isOpen, onClose, onSend, isSend
         <h2 className="text-xl md:text-2xl font-black text-blue-600 flex items-center gap-3 mb-4"><Mail className="w-6 h-6" /> Enviar Dossiê Celestial</h2>
         <p className="text-slate-600 text-sm md:text-base mb-6 leading-relaxed">Insira o endereço de e-mail para receber o relatório astrológico completo e a análise da IA.</p>
         <label htmlFor="emailConsulente" className="sr-only">Endereço de E-mail</label>
-        <input type="email" id="emailConsulente" placeholder="usuario@email.com" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition shadow-inner mb-6 text-base" value={email} onChange={e => setEmail(e.target.value)} disabled={isSending} />
+        <input type="email" id="emailConsulente" name="email" autoComplete="email" placeholder="usuario@email.com" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition shadow-inner mb-6 text-base" value={email} onChange={e => setEmail(e.target.value)} disabled={isSending} />
         <button onClick={() => { if (isValidEmail(email)) onSend(email.trim()); }} disabled={isSending || !isValidEmail(email)} aria-label="Disparar E-mail" className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold p-4 rounded-xl flex justify-center items-center gap-3 transition-all disabled:opacity-50 uppercase tracking-wider shadow-md text-sm md:text-base">
           {isSending ? <Sparkles className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />} {isSending ? 'Transmitindo...' : 'Disparar E-mail'}
         </button>
@@ -104,7 +104,7 @@ const LocationAutocomplete: React.FC<AutocompleteProps> = ({ value, onChange }) 
 
   return (
     <div className="relative w-full" ref={wrapperRef}>
-      <input id="localNascimentoInput" required type="text" placeholder="Ex: Rio de Janeiro, RJ" autoComplete="off" className="w-full p-4 pl-12 bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm backdrop-blur-sm text-base font-medium placeholder-slate-400" value={query || value} onChange={handleInputChange} onFocus={() => suggestions.length > 0 && setIsOpen(true)} />
+      <input id="localNascimentoInput" name="birthLocation" required type="text" placeholder="Ex: Rio de Janeiro, RJ" autoComplete="off" className="w-full p-4 pl-12 bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm backdrop-blur-sm text-base font-medium placeholder-slate-400" value={query || value} onChange={handleInputChange} onFocus={() => suggestions.length > 0 && setIsOpen(true)} />
       <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
       {loading && <Sparkles className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 animate-spin text-blue-500" />}
       {isOpen && suggestions.length > 0 && (
@@ -466,10 +466,10 @@ export default function App() {
           <p className="text-slate-600 text-sm md:text-lg font-medium tracking-wide text-balance">Umbanda Esotérica da Raiz de Guiné <span className="text-slate-400 text-[10px] md:text-sm font-normal">(W. W. da Matta e Silva)</span></p>
         </header>
 
-        <form onSubmit={calcularMapa} className={`md3-glass bg-white/60 backdrop-blur-2xl p-6 md:p-10 rounded-[2.5rem] border border-white shadow-[0_8px_32px_rgba(0,0,0,0.08)] w-full grid md:grid-cols-2 gap-5 md:gap-8 max-w-4xl ${result ? 'mb-8' : ''}`}>
+        <form onSubmit={calcularMapa} autoComplete="on" className={`md3-glass bg-white/60 backdrop-blur-2xl p-6 md:p-10 rounded-[2.5rem] border border-white shadow-[0_8px_32px_rgba(0,0,0,0.08)] w-full grid md:grid-cols-2 gap-5 md:gap-8 max-w-4xl ${result ? 'mb-8' : ''}`}>
           <div className="flex flex-col gap-2 w-full">
             <label htmlFor="nomeConsulente" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><User className="w-4 h-4 text-blue-500" /> NOME COMPLETO</label>
-            <input id="nomeConsulente" required type="text" aria-label="Nome Completo" title="Nome Completo" placeholder="Ex: João da Silva" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium" value={formData.nome} onChange={e => setFormData({ ...formData, nome: e.target.value })} />
+            <input id="nomeConsulente" name="name" required type="text" autoComplete="name" aria-label="Nome Completo" title="Nome Completo" placeholder="Ex: João da Silva" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium" value={formData.nome} onChange={e => setFormData({ ...formData, nome: e.target.value })} />
           </div>
           <div className="flex flex-col gap-2 w-full">
             <label htmlFor="localNascimentoInput" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><MapPin className="w-4 h-4 text-blue-500" /> LOCAL DE NASCIMENTO <span className="normal-case text-slate-400 font-medium tracking-normal">(Cidade, Estado)</span></label>
@@ -477,11 +477,11 @@ export default function App() {
           </div>
           <div className="flex flex-col gap-2 w-full">
             <label htmlFor="dataNascimento" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><Calendar className="w-4 h-4 text-blue-500" /> DATA DE NASCIMENTO</label>
-            <input id="dataNascimento" required type="date" aria-label="Data de Nascimento" title="Data de Nascimento" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium [color-scheme:light]" value={formData.dataNascimento} onChange={e => setFormData({ ...formData, dataNascimento: e.target.value })} />
+            <input id="dataNascimento" name="birthDate" required type="date" autoComplete="bday" aria-label="Data de Nascimento" title="Data de Nascimento" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium [color-scheme:light]" value={formData.dataNascimento} onChange={e => setFormData({ ...formData, dataNascimento: e.target.value })} />
           </div>
           <div className="flex flex-col gap-2 w-full">
             <label htmlFor="horaNascimento" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><Clock className="w-4 h-4 text-blue-500" /> HORÁRIO DE NASCIMENTO <span className="normal-case text-slate-400 font-medium tracking-normal">(HH:mm)</span></label>
-            <input id="horaNascimento" required type="time" aria-label="Horário de Nascimento" title="Horário de Nascimento" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium [color-scheme:light]" value={formData.horaNascimento} onChange={e => setFormData({ ...formData, horaNascimento: e.target.value })} />
+            <input id="horaNascimento" name="birthTime" required type="time" autoComplete="off" aria-label="Horário de Nascimento" title="Horário de Nascimento" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium [color-scheme:light]" value={formData.horaNascimento} onChange={e => setFormData({ ...formData, horaNascimento: e.target.value })} />
           </div>
 
           <div className="md:col-span-2 mt-4 flex flex-col md:flex-row gap-4 w-full">
