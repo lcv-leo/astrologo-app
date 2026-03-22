@@ -83,7 +83,7 @@ Retorne APENAS HTML formatado em <p>, <strong>, <ul>, <li>. Sem marcações mark
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { thinkingConfig: { thinkingBudget: -1 } },
+          generationConfig: { thinkingConfig: { thinkingLevel: "HIGH" } },
           safetySettings: [
             { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
             { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
