@@ -1,3 +1,7 @@
+// Módulo: astrologo-frontend/functions/api/analisar.ts
+// Versão: v02.14.00
+// Descrição: API de análise astrológica via Gemini — v1beta, gemini-pro-latest, thinkingLevel HIGH, safetySettings, retry.
+
 import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, rateLimitHeaders, resolveRateLimitConfig, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
 
 interface EnvBindings { GEMINI_API_KEY: string; DB: D1DatabaseLike; }

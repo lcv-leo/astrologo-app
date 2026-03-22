@@ -1,9 +1,13 @@
+// Módulo: astrologo-frontend/src/App.tsx
+// Versão: v02.14.00
+// Descrição: Frontend principal do Oráculo Celestial com análise astrológica via Gemini.
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Compass, Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, Info, Star, MapPin, User, Calendar, Clock, X, HelpCircle, Mail, Send, RotateCcw } from 'lucide-react';
 import { useNotification } from './components/Notification';
 import DOMPurify from 'dompurify';
 
-const APP_VERSION = "2.13.00";
+const APP_VERSION = 'APP v02.14.00';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
@@ -221,7 +225,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
     }
 
     t += divider;
-    t += `✨ _Gerado via Oráculo Celestial v${APP_VERSION}_ ✨`;
+    t += `✨ _Gerado via Oráculo Celestial ${APP_VERSION}_ ✨`;
     return t;
   };
 
@@ -347,7 +351,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
             ` : ''}
 
             <footer style="text-align: center; margin-top: 60px; padding-top: 20px; border-top: 1px solid #dde4ee;">
-                <p style="font-size: 12px; color: #64748b; margin: 0;">Gerado via Oráculo Celestial v${APP_VERSION}</p>
+                <p style="font-size: 12px; color: #64748b; margin: 0;">Gerado via Oráculo Celestial ${APP_VERSION}</p>
             </footer>
 
         </div>
@@ -499,7 +503,7 @@ export default function App() {
         {result && <ResultView result={result} analiseIa={analiseIa} onSolicitarAnalise={solicitarAnalise} loadingAi={loadingAi} openInfoModal={setModalType} />}
       </div>
       <footer className="w-full py-6 mt-12 bg-white/40 backdrop-blur-md border-t border-white flex justify-center items-center shrink-0">
-        <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs flex items-center gap-2"><span className="opacity-70">Oráculo Celestial</span><span className="opacity-30">•</span><span className="text-blue-600">APP v{APP_VERSION}</span></p>
+        <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs flex items-center gap-2"><span className="opacity-70">Oráculo Celestial</span><span className="opacity-30">•</span><span className="text-blue-600">{APP_VERSION}</span></p>
       </footer>
     </div>
   );
