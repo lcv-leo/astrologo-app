@@ -542,14 +542,17 @@ export default function App() {
               </div>
 
               <ul className="max-h-[400px] overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-slate-50 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full divide-y divide-slate-100">
-                {lista.map(item => (
-                  <li key={item.id} className="flex items-stretch hover:bg-blue-50/30 group transition-colors min-w-max">
+                {lista.map(item => {
+                  const isSelected = selectedMap?.id === item.id;
+                  return (
+                  <li key={item.id} className={`flex items-stretch group transition-colors min-w-max ${isSelected ? 'bg-blue-50 border-l-4 border-l-blue-600' : 'hover:bg-blue-50/30 border-l-4 border-l-transparent'}`}>
                     <button onClick={() => carregarMapa(item.id)} aria-label={`Carregar mapa de ${item.nome}`} className="flex-grow text-left px-6 py-5 text-slate-700 font-medium text-sm md:text-base flex justify-between items-center outline-none">
-                      <span className="whitespace-nowrap pr-8 text-slate-800 font-bold">{item.nome} <span className="text-slate-300 mx-3 font-normal">|</span> <span className="text-blue-500/80 group-hover:text-blue-600 font-medium">{formatarData(item.data_nascimento)}</span></span>
+                      <span className={`whitespace-nowrap pr-8 font-bold ${isSelected ? 'text-blue-700' : 'text-slate-800'}`}>{item.nome} <span className={`mx-3 font-normal ${isSelected ? 'text-blue-300' : 'text-slate-300'}`}>|</span> <span className={`font-medium ${isSelected ? 'text-blue-600' : 'text-blue-500/80 group-hover:text-blue-600'}`}>{formatarData(item.data_nascimento)}</span></span>
                     </button>
                     <button onClick={(e) => deletarMapa(item.id, item.nome, e)} aria-label="Apagar Registro" className="px-6 py-5 text-slate-400 hover:text-red-500 hover:bg-red-50 opacity-50 md:opacity-0 md:group-hover:opacity-100 transition-all outline-none flex-shrink-0"><Trash2 className="w-4 h-4 md:w-5 md:h-5" /></button>
                   </li>
-                ))}
+                  );
+                })}
                 {lista.length === 0 && <li className="p-8 text-center text-slate-400 text-sm md:text-base font-medium">O vazio sideral... Nenhum registro.</li>}
               </ul>
 
