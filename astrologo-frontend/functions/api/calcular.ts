@@ -84,7 +84,7 @@ export async function onRequestPost(context: Context) {
                 [srH, srM] = parseIsoTime(archiveData.daily?.sunrise?.[0], 6, 0);
                 [ssH, ssM] = parseIsoTime(archiveData.daily?.sunset?.[0], 18, 0);
             }
-        } catch { console.log("Usando Fallback Geográfico (RJ)."); }
+        } catch { console.warn("Usando Fallback Geográfico (RJ)."); }
 
         const [ano, mes, dia] = dataNascimento.split('-').map(Number);
         const [hLocal, mLocal] = horaNascimento.split(':').map(Number);

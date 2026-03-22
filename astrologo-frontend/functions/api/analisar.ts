@@ -98,7 +98,7 @@ Retorne APENAS HTML formatado em <p>, <strong>, <ul>, <li>. Sem marcações mark
 
     if (env.DB && id && typeof id === 'string') {
       try { await env.DB.prepare("UPDATE mapas_astrologicos SET analise_ia = ? WHERE id = ?").bind(analise, id).run(); }
-      catch { console.log("Erro silencioso ao atualizar análise no banco."); }
+      catch { console.warn("Erro silencioso ao atualizar análise no banco."); }
     }
 
     return new Response(JSON.stringify({ success: true, analise }), { headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
