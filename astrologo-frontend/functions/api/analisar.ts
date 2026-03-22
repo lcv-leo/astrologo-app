@@ -76,23 +76,40 @@ ATENÇÃO RIGOROSA 2: Inclua de forma explícita e obrigatória a informação d
 
 Retorne APENAS HTML formatado em <p>, <strong>, <ul>, <li>. Sem marcações markdown ou blocos de código e com os títulos alinhados à esquerda e os textos dos parágrafos justificados e com recuo de primeira linha de cada parágrafo.`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key=${env.GEMINI_API_KEY}`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-    });
+    // Retry: 1 tentativa extra em caso de falha transitória
+    let response: Response;
+    for (let t = 0; t < 2; t++) {
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?key=${env.GEMINI_API_KEY}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { thinkingConfig: { thinkingBudget: -1 } },
+          safetySettings: [
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+          ]
+        })
+      });
+      if (response!.ok) break;
+      if (t === 0) await new Promise(r => setTimeout(r, 800));
+    }
 
-    if (!response.ok) {
+    if (!response!.ok) {
       return new Response(JSON.stringify({ success: false, error: "Falha no provedor de IA." }), {
         status: 502,
         headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
       });
     }
 
-    const aiData = await response.json() as Record<string, unknown>;
+    const aiData = await response!.json() as Record<string, unknown>;
     const candidates = aiData?.candidates as Array<Record<string, unknown>>;
     const content = candidates?.[0]?.content as Record<string, unknown>;
-    const parts = content?.parts as Array<Record<string, string>>;
-    let analise = parts?.[0]?.text || "<p>Perturbação no éter na geração.</p>";
+    const parts = content?.parts as Array<Record<string, string | boolean>>;
+    // Filtrar partes visíveis (ignorar thoughts de modelos thinking)
+    const visibleParts = (parts || []).filter(p => p.text && !p.thought);
+    let analise = visibleParts.map(p => p.text).join('') || parts?.[0]?.text as string || "<p>Perturbação no éter na geração.</p>";
     analise = sanitizeGeneratedHtml(analise);
     if (!analise) analise = "<p>Perturbação no éter na geração.</p>";
 
