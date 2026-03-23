@@ -7,7 +7,7 @@ import { Compass, Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, I
 import { useNotification } from './components/Notification';
 import DOMPurify from 'dompurify';
 
-const APP_VERSION = 'APP v02.14.00';
+const APP_VERSION = 'APP v02.15.00';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
