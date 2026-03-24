@@ -1,5 +1,5 @@
 // Módulo: astrologo-frontend/src/App.tsx
-// Versão: v02.14.00
+// Versão: v02.15.00
 // Descrição: Frontend principal do Oráculo Celestial com análise astrológica via Gemini.
 
 import React, { useState, useEffect, useRef } from 'react';
