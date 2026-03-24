@@ -1,5 +1,5 @@
 interface EnvBindings {
-    DB: { prepare: (q: string) => { all: () => Promise<{ results: unknown[] }>; run: () => Promise<unknown> } };
+    BIGDATA_DB: { prepare: (q: string) => { all: () => Promise<{ results: unknown[] }>; run: () => Promise<unknown> } };
 }
 interface Context { env: EnvBindings; request: Request; }
 
@@ -30,8 +30,8 @@ const hasDisallowedOrigin = (request: Request): boolean => {
 };
 
 const ensurePolicyTable = async (env: EnvBindings) => {
-    await env.DB.prepare(`
-        CREATE TABLE IF NOT EXISTS rate_limit_policies (
+    await env.BIGDATA_DB.prepare(`
+        CREATE TABLE IF NOT EXISTS astrologo_rate_limit_policies (
             route TEXT PRIMARY KEY,
             enabled INTEGER NOT NULL DEFAULT 1,
             max_requests INTEGER NOT NULL,
@@ -40,9 +40,9 @@ const ensurePolicyTable = async (env: EnvBindings) => {
         )
     `).run();
 
-    await env.DB.prepare(`INSERT OR IGNORE INTO rate_limit_policies (route, enabled, max_requests, window_minutes) VALUES ('calcular', 1, 10, 10)`).run();
-    await env.DB.prepare(`INSERT OR IGNORE INTO rate_limit_policies (route, enabled, max_requests, window_minutes) VALUES ('analisar', 1, 6, 15)`).run();
-    await env.DB.prepare(`INSERT OR IGNORE INTO rate_limit_policies (route, enabled, max_requests, window_minutes) VALUES ('enviar-email', 1, 4, 60)`).run();
+    await env.BIGDATA_DB.prepare(`INSERT OR IGNORE INTO astrologo_rate_limit_policies (route, enabled, max_requests, window_minutes) VALUES ('astrologo/calcular', 1, 10, 10)`).run();
+    await env.BIGDATA_DB.prepare(`INSERT OR IGNORE INTO astrologo_rate_limit_policies (route, enabled, max_requests, window_minutes) VALUES ('astrologo/analisar', 1, 6, 15)`).run();
+    await env.BIGDATA_DB.prepare(`INSERT OR IGNORE INTO astrologo_rate_limit_policies (route, enabled, max_requests, window_minutes) VALUES ('astrologo/enviar-email', 1, 4, 60)`).run();
 };
 
 export async function onRequestOptions(context: Context) {
@@ -62,7 +62,7 @@ export async function onRequestGet(context: Context) {
 
     try {
         await ensurePolicyTable(env);
-        const { results } = await env.DB.prepare(`SELECT route, enabled, max_requests, window_minutes FROM rate_limit_policies ORDER BY route ASC`).all();
+        const { results } = await env.BIGDATA_DB.prepare(`SELECT route, enabled, max_requests, window_minutes FROM astrologo_rate_limit_policies ORDER BY route ASC`).all();
         return new Response(JSON.stringify({ success: true, policies: results }), {
             headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
         });

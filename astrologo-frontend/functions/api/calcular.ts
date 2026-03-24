@@ -1,10 +1,10 @@
 import { calcExpressionNumber, getJulianDate, getTatwaAtMoment, isValidDateString, isValidTimeString, reduceNum, wrapDegrees, type AstroInfo } from './_shared/astroCore';
 import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, rateLimitHeaders, resolveRateLimitConfig, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
 
-interface EnvBindings { GEMINI_API_KEY: string; DB: D1DatabaseLike; }
+interface EnvBindings { GEMINI_API_KEY: string; BIGDATA_DB: D1DatabaseLike; }
 interface Context { request: Request; env: EnvBindings; }
 
-const RATE_LIMIT = { route: 'calcular', limit: 10, windowMs: 10 * 60 * 1000 };
+const RATE_LIMIT = { route: 'astrologo/calcular', limit: 10, windowMs: 10 * 60 * 1000 };
 
 const parseIsoTime = (value: string | undefined, fallbackH: number, fallbackM: number): [number, number] => {
     if (!value) return [fallbackH, fallbackM];
@@ -28,10 +28,10 @@ export async function onRequestPost(context: Context) {
         });
     }
 
-    const activeRateLimit = await resolveRateLimitConfig(env.DB, RATE_LIMIT);
+    const activeRateLimit = await resolveRateLimitConfig(env.BIGDATA_DB, RATE_LIMIT);
 
     const rateLimit = activeRateLimit.enabled
-        ? await enforceRateLimit(env.DB, request, activeRateLimit)
+        ? await enforceRateLimit(env.BIGDATA_DB, request, activeRateLimit)
         : { allowed: true, limit: activeRateLimit.limit, remaining: activeRateLimit.limit, resetAt: Date.now() + activeRateLimit.windowMs };
 
     const limitHeaders = rateLimitHeaders(rateLimit);
@@ -226,8 +226,8 @@ export async function onRequestPost(context: Context) {
 
         const idUnico = crypto.randomUUID();
         try {
-            if (env.DB) {
-                await env.DB.prepare(`INSERT INTO mapas_astrologicos (id, nome, data_nascimento, hora_nascimento, local_nascimento, dados_astronomica, dados_tropical, dados_globais) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+            if (env.BIGDATA_DB) {
+                await env.BIGDATA_DB.prepare(`INSERT INTO astrologo_mapas (id, nome, data_nascimento, hora_nascimento, local_nascimento, dados_astronomica, dados_tropical, dados_globais) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
                     .bind(idUnico, nome, dataNascimento, horaNascimento, localNascimento, JSON.stringify(dadosAstronomica), JSON.stringify(dadosTropical), JSON.stringify(dadosGlobais)).run();
             }
         } catch { console.error("Falha ao gravar no BD."); }

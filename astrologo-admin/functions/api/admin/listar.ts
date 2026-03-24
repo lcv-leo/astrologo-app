@@ -1,5 +1,5 @@
 interface EnvBindings {
-    DB: { prepare: (q: string) => { all: () => Promise<{ results: unknown[] }> } };
+    BIGDATA_DB: { prepare: (q: string) => { all: () => Promise<{ results: unknown[] }> } };
 }
 interface Context { env: EnvBindings; request: Request; }
 
@@ -46,7 +46,7 @@ export async function onRequestGet(context: Context) {
 
 
     try {
-        const { results } = await env.DB.prepare(`SELECT id, nome, data_nascimento FROM mapas_astrologicos ORDER BY created_at DESC`).all();
+        const { results } = await env.BIGDATA_DB.prepare(`SELECT id, nome, data_nascimento FROM astrologo_mapas ORDER BY created_at DESC`).all();
         return new Response(JSON.stringify({ success: true, mapas: results }), { headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders } });
     } catch (error) {
         return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Erro interno" }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders } });
