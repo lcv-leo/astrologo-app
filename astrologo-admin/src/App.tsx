@@ -3,7 +3,7 @@ import { useNotification } from './components/Notification';
 import { Database, RefreshCw, Trash2, Star, Sun, Moon, Sparkles, Wind, Hash, BrainCircuit, Mail, Share2, Copy, Send, ShieldAlert, Save } from 'lucide-react';
 import DOMPurify from 'dompurify';
 
-const ADMIN_VERSION = "2.13.0";
+const ADMIN_VERSION = "2.14.0";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
@@ -22,18 +22,18 @@ interface BlocoProps { titulo: string; dadosAstrologia: AstroData[]; dadosUmband
 interface ResultViewProps { result: ResultData; analiseIa: string; }
 interface ConfirmConfig { show: boolean; id: string; nome: string; }
 interface EmailModalProps { isOpen: boolean; onClose: () => void; onSend: (email: string) => void; isSending: boolean; }
-interface RateLimitPolicy { route: 'calcular' | 'analisar' | 'enviar-email'; enabled: boolean; max_requests: number; window_minutes: number; }
+interface RateLimitPolicy { route: 'astrologo/calcular' | 'astrologo/analisar' | 'astrologo/enviar-email'; enabled: boolean; max_requests: number; window_minutes: number; }
 
 const routeLabel: Record<RateLimitPolicy['route'], string> = {
-  calcular: 'Cálculo do Mapa',
-  analisar: 'Síntese da IA',
-  'enviar-email': 'Envio de E-mail'
+  'astrologo/calcular': 'Cálculo do Mapa',
+  'astrologo/analisar': 'Síntese da IA',
+  'astrologo/enviar-email': 'Envio de E-mail'
 };
 
 const defaultPolicies: Record<RateLimitPolicy['route'], Pick<RateLimitPolicy, 'enabled' | 'max_requests' | 'window_minutes'>> = {
-  calcular: { enabled: true, max_requests: 10, window_minutes: 10 },
-  analisar: { enabled: true, max_requests: 6, window_minutes: 15 },
-  'enviar-email': { enabled: true, max_requests: 4, window_minutes: 60 }
+  'astrologo/calcular': { enabled: true, max_requests: 10, window_minutes: 10 },
+  'astrologo/analisar': { enabled: true, max_requests: 6, window_minutes: 15 },
+  'astrologo/enviar-email': { enabled: true, max_requests: 4, window_minutes: 60 }
 };
 
 const formatarData = (dataStr: string): string => {
@@ -206,9 +206,9 @@ export default function App() {
           max_requests: Math.max(1, Number(p.max_requests) || 1),
           window_minutes: Math.max(1, Number(p.window_minutes) || 1)
         }))
-        .filter((p) => p.route === 'calcular' || p.route === 'analisar' || p.route === 'enviar-email')
+        .filter((p) => p.route === 'astrologo/calcular' || p.route === 'astrologo/analisar' || p.route === 'astrologo/enviar-email')
         .sort((a, b) => {
-          const order: Record<RateLimitPolicy['route'], number> = { calcular: 1, analisar: 2, 'enviar-email': 3 };
+          const order: Record<RateLimitPolicy['route'], number> = { 'astrologo/calcular': 1, 'astrologo/analisar': 2, 'astrologo/enviar-email': 3 };
           return order[a.route] - order[b.route];
         });
 

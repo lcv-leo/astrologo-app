@@ -1,5 +1,14 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.16.00] — 2026-03-24
+### Alterado
+- Migração de D1 para `bigdata_db` com tabelas prefixadas (`astrologo_mapas`, `astrologo_api_rate_limits`, `astrologo_rate_limit_policies`)
+- Rotas de rate limit migradas para namespace contextual (`astrologo/calcular`, `astrologo/analisar`, `astrologo/enviar-email`)
+
+### Infra
+- `wrangler.json` atualizado para `bigdata_db` (binding `BIGDATA_DB`)
+- Versionamento consolidado para `APP v02.16.00` + `package.json` 2.16.0
+
 ## [v02.15.01] — 2026-03-24
 ### Corrigido
 - Persistência da análise de IA na D1 com fallback quando a coluna `data_analise` não existe no schema
