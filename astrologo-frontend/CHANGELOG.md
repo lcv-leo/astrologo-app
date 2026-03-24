@@ -1,5 +1,10 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.15.01] — 2026-03-24
+### Corrigido
+- Persistência da análise de IA na D1 com fallback quando a coluna `data_analise` não existe no schema
+- Restauração no admin normalizada ao garantir gravação de `analise_ia` no registro
+
 ## [v02.15.00] — 2026-03-23
 ### Corrigido
 - Reinserção obrigatória de emojis e símbolos pictóricos (astros, signos, orixás, esotérico) no prompt da IA, que haviam desaparecido após o upgrade do modelo Gemini

@@ -1,5 +1,5 @@
 // Módulo: astrologo-frontend/functions/api/analisar.ts
-// Versão: v02.15.00 + Gemini v1beta Modernization
+// Versão: v02.15.01 + Gemini v1beta Modernization
 // Descrição: API de análise astrológica via Gemini v1beta com token counting, structured outputs, e caching otimizado.
 
 import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, rateLimitHeaders, resolveRateLimitConfig, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
