@@ -5,7 +5,7 @@
 import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, rateLimitHeaders, resolveRateLimitConfig, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
 
 // ==== TYPES PARA GOOGLE GEMINI API v1beta ====
-interface EnvBindings { GEMINI_API_KEY: string; DB: D1DatabaseLike; }
+interface EnvBindings { GEMINI_API_KEY: string; BIGDATA_DB: D1DatabaseLike; }
 interface Context { request: Request; env: EnvBindings; }
 
 /** Response do countTokens API (docs: v1beta/models:countTokens) */
@@ -47,7 +47,7 @@ function structuredLog(level: 'INFO' | 'WARN' | 'ERROR', message: string, contex
   console.log(JSON.stringify(logEntry));
 }
 
-const RATE_LIMIT = { route: 'analisar', limit: 6, windowMs: 15 * 60 * 1000 };
+const RATE_LIMIT = { route: 'astrologo/analisar', limit: 6, windowMs: 15 * 60 * 1000 };
 
 // Configuração de modelo e valores de geração otimizados (Gemini v1beta)
 const GEMINI_CONFIG = {
@@ -123,10 +123,10 @@ export async function onRequestPost(context: Context) {
     });
   }
 
-  const activeRateLimit = await resolveRateLimitConfig(env.DB, RATE_LIMIT);
+  const activeRateLimit = await resolveRateLimitConfig(env.BIGDATA_DB, RATE_LIMIT);
 
   const rateLimit = activeRateLimit.enabled
-    ? await enforceRateLimit(env.DB, request, activeRateLimit)
+    ? await enforceRateLimit(env.BIGDATA_DB, request, activeRateLimit)
     : { allowed: true, limit: activeRateLimit.limit, remaining: activeRateLimit.limit, resetAt: Date.now() + activeRateLimit.windowMs };
 
   const limitHeaders = rateLimitHeaders(rateLimit);
@@ -271,10 +271,10 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
     }
 
     // ==== PASSO 4: Persistência no banco (D1) ====
-    if (env.DB && id && typeof id === 'string') {
+    if (env.BIGDATA_DB && id && typeof id === 'string') {
       try {
         try {
-          await env.DB.prepare("UPDATE mapas_astrologicos SET analise_ia = ?, data_analise = datetime('now') WHERE id = ?")
+          await env.BIGDATA_DB.prepare("UPDATE astrologo_mapas SET analise_ia = ?, data_analise = datetime('now') WHERE id = ?")
             .bind(analise, id)
             .run();
         } catch (firstPersistErr) {
@@ -290,7 +290,7 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
             error: firstMessage
           });
 
-          await env.DB.prepare("UPDATE mapas_astrologicos SET analise_ia = ? WHERE id = ?")
+          await env.BIGDATA_DB.prepare("UPDATE astrologo_mapas SET analise_ia = ? WHERE id = ?")
             .bind(analise, id)
             .run();
         }

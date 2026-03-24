@@ -1,9 +1,9 @@
 import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, rateLimitHeaders, resolveRateLimitConfig, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
 
-interface EnvBindings { RESEND_API_KEY: string; DB: D1DatabaseLike; }
+interface EnvBindings { RESEND_API_KEY: string; BIGDATA_DB: D1DatabaseLike; }
 interface Context { request: Request; env: EnvBindings; }
 
-const RATE_LIMIT = { route: 'enviar-email', limit: 4, windowMs: 60 * 60 * 1000 };
+const RATE_LIMIT = { route: 'astrologo/enviar-email', limit: 4, windowMs: 60 * 60 * 1000 };
 
 const isValidEmail = (value: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
@@ -22,10 +22,10 @@ export async function onRequestPost(context: Context) {
         });
     }
 
-    const activeRateLimit = await resolveRateLimitConfig(env.DB, RATE_LIMIT);
+    const activeRateLimit = await resolveRateLimitConfig(env.BIGDATA_DB, RATE_LIMIT);
 
     const rateLimit = activeRateLimit.enabled
-        ? await enforceRateLimit(env.DB, request, activeRateLimit)
+        ? await enforceRateLimit(env.BIGDATA_DB, request, activeRateLimit)
         : { allowed: true, limit: activeRateLimit.limit, remaining: activeRateLimit.limit, resetAt: Date.now() + activeRateLimit.windowMs };
 
     const limitHeaders = rateLimitHeaders(rateLimit);

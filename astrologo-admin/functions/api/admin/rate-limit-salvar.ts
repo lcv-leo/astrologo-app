@@ -1,5 +1,5 @@
 interface EnvBindings {
-    DB: { prepare: (q: string) => { bind: (...args: unknown[]) => { run: () => Promise<unknown> }; run: () => Promise<unknown> } };
+    BIGDATA_DB: { prepare: (q: string) => { bind: (...args: unknown[]) => { run: () => Promise<unknown> }; run: () => Promise<unknown> } };
 }
 interface Context { env: EnvBindings; request: Request; }
 
@@ -30,8 +30,8 @@ const hasDisallowedOrigin = (request: Request): boolean => {
 };
 
 const ensurePolicyTable = async (env: EnvBindings) => {
-    await env.DB.prepare(`
-        CREATE TABLE IF NOT EXISTS rate_limit_policies (
+    await env.BIGDATA_DB.prepare(`
+        CREATE TABLE IF NOT EXISTS astrologo_rate_limit_policies (
             route TEXT PRIMARY KEY,
             enabled INTEGER NOT NULL DEFAULT 1,
             max_requests INTEGER NOT NULL,
@@ -60,7 +60,7 @@ export async function onRequestPost(context: Context) {
         await ensurePolicyTable(env);
         const payload = await request.json() as { policies?: Array<{ route: string; enabled: boolean; max_requests: number; window_minutes: number }> };
         const policies = Array.isArray(payload.policies) ? payload.policies : [];
-        const allowedRoutes = new Set(['calcular', 'analisar', 'enviar-email']);
+        const allowedRoutes = new Set(['astrologo/calcular', 'astrologo/analisar', 'astrologo/enviar-email']);
 
         for (const policy of policies) {
             if (!allowedRoutes.has(policy.route)) continue;
@@ -68,8 +68,8 @@ export async function onRequestPost(context: Context) {
             const windowMinutes = Math.max(1, Math.min(1440, Number(policy.window_minutes) || 1));
             const enabled = policy.enabled ? 1 : 0;
 
-            await env.DB.prepare(`
-                INSERT INTO rate_limit_policies (route, enabled, max_requests, window_minutes, updated_at)
+            await env.BIGDATA_DB.prepare(`
+                INSERT INTO astrologo_rate_limit_policies (route, enabled, max_requests, window_minutes, updated_at)
                 VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(route) DO UPDATE SET
                     enabled = excluded.enabled,

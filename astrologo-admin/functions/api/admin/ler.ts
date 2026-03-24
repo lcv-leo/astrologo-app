@@ -1,5 +1,5 @@
 interface Env {
-    DB: { prepare: (q: string) => { bind: (...args: unknown[]) => { first: () => Promise<unknown> } } };
+    BIGDATA_DB: { prepare: (q: string) => { bind: (...args: unknown[]) => { first: () => Promise<unknown> } } };
 }
 interface Context { env: Env; request: Request; }
 
@@ -54,7 +54,7 @@ export async function onRequestPost(context: Context) {
             });
         }
 
-        const mapa = await env.DB.prepare(`SELECT * FROM mapas_astrologicos WHERE id = ?`).bind(id).first();
+        const mapa = await env.BIGDATA_DB.prepare(`SELECT * FROM astrologo_mapas WHERE id = ?`).bind(id).first();
         return new Response(JSON.stringify({ success: true, mapa }), { headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders } });
     } catch (error) {
         return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Erro na leitura" }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders } });

@@ -117,7 +117,7 @@ export const enforceRateLimit = async (
   const key = await sha256Hex(keySeed);
 
   const existing = await db
-    .prepare<RateLimitRow>("SELECT request_count, window_start FROM api_rate_limits WHERE key = ?")
+    .prepare<RateLimitRow>("SELECT request_count, window_start FROM astrologo_api_rate_limits WHERE key = ?")
     .bind(key)
     .first();
 
@@ -126,7 +126,7 @@ export const enforceRateLimit = async (
   if (!row || row.window_start !== windowStart) {
     await db
       .prepare(
-        "INSERT OR REPLACE INTO api_rate_limits (key, route, window_start, request_count, updated_at) VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)"
+        "INSERT OR REPLACE INTO astrologo_api_rate_limits (key, route, window_start, request_count, updated_at) VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)"
       )
       .bind(key, config.route, windowStart)
       .run();
@@ -151,7 +151,7 @@ export const enforceRateLimit = async (
 
   const nextCount = row.request_count + 1;
   await db
-    .prepare("UPDATE api_rate_limits SET request_count = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?")
+    .prepare("UPDATE astrologo_api_rate_limits SET request_count = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?")
     .bind(nextCount, key)
     .run();
 
@@ -169,7 +169,7 @@ export const resolveRateLimitConfig = async (
 ): Promise<EffectiveRateLimitConfig> => {
   try {
     const policy = await db
-      .prepare<RateLimitPolicyRow>("SELECT enabled, max_requests, window_minutes FROM rate_limit_policies WHERE route = ?")
+      .prepare<RateLimitPolicyRow>("SELECT enabled, max_requests, window_minutes FROM astrologo_rate_limit_policies WHERE route = ?")
       .bind(fallback.route)
       .first();
 
