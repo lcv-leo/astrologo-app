@@ -273,9 +273,28 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
     // ==== PASSO 4: Persistência no banco (D1) ====
     if (env.DB && id && typeof id === 'string') {
       try {
-        await env.DB.prepare("UPDATE mapas_astrologicos SET analise_ia = ?, data_analise = datetime('now') WHERE id = ?")
-          .bind(analise, id)
-          .run();
+        try {
+          await env.DB.prepare("UPDATE mapas_astrologicos SET analise_ia = ?, data_analise = datetime('now') WHERE id = ?")
+            .bind(analise, id)
+            .run();
+        } catch (firstPersistErr) {
+          const firstMessage = String(firstPersistErr);
+          const missingDataAnaliseColumn = /no such column:\s*data_analise/i.test(firstMessage);
+
+          if (!missingDataAnaliseColumn) {
+            throw firstPersistErr;
+          }
+
+          structuredLog('WARN', 'Coluna data_analise ausente, aplicando fallback de persistência', {
+            id,
+            error: firstMessage
+          });
+
+          await env.DB.prepare("UPDATE mapas_astrologicos SET analise_ia = ? WHERE id = ?")
+            .bind(analise, id)
+            .run();
+        }
+
         structuredLog('INFO', 'Análise persistida no banco', { id });
       } catch (dbErr) {
         structuredLog('WARN', "Erro ao persistir análise no banco (continuando)", { error: String(dbErr) });
