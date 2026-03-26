@@ -1,8 +1,8 @@
 /* ─── Notification Toast — tiptap.dev Design ─── */
+
+/* Container — always bottom-right */
 .notification-container {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
   z-index: 10050;
   display: flex;
   flex-direction: column;
@@ -10,11 +10,22 @@
   pointer-events: none;
 }
 
-.notification-toast {
+.notification-container-desktop {
+  bottom: 24px;
+  right: 24px;
+  max-width: 380px;
+}
+
+.notification-container-mobile {
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+}
+
+/* Individual toast */
+.notification {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 20px;
+  flex-direction: column;
   border-radius: 16px;
   background: rgba(13, 13, 13, 0.92);
   color: #ffffff;
@@ -24,47 +35,65 @@
   font-weight: 600;
   font-size: 14px;
   pointer-events: auto;
-  opacity: 0;
-  transform: translateY(20px);
+  overflow: hidden;
   animation: toast-in 0.4s ease forwards;
 }
 
-.notification-toast.toast-exit {
-  animation: toast-out 0.3s ease forwards;
-}
+.notification-success { background: rgba(13, 13, 13, 0.92); }
+.notification-info    { background: rgba(13, 13, 13, 0.92); }
+.notification-error   { background: #dc2626; }
 
-.notification-toast.toast-success {
-  background: rgba(13, 13, 13, 0.92);
-}
-
-.notification-toast.toast-error {
-  background: #dc2626;
-}
-
-.notification-toast.toast-info {
-  background: rgba(13, 13, 13, 0.92);
-}
-
-.notification-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  display: inline-flex;
+/* Body row: message + close */
+.notification-body {
+  display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 10px;
+  padding: 14px 16px 14px 20px;
 }
 
 .notification-message {
+  flex: 1;
   font-size: 14px;
   line-height: 1.4;
 }
 
-@keyframes toast-in {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Close button */
+.notification-close {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  padding: 0;
 }
 
-@keyframes toast-out {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(20px); }
+.notification-close:hover { background: rgba(255,255,255,0.2); }
+.notification-close:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
+
+/* Progress bar */
+.notification-progress {
+  display: block;
+  height: 3px;
+  background: rgba(255,255,255,0.25);
+  animation: toast-progress 5s linear forwards;
+  border-radius: 0 0 16px 16px;
+}
+
+@keyframes toast-progress {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
