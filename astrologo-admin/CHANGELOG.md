@@ -1,5 +1,9 @@
 # Changelog — Astrólogo Admin
 
+## [v02.16.00] — 2026-03-26
+### Adicionado
+- **Botões flutuantes de rolagem**: FABs (Voltar ao topo / Ir para o final) com `ArrowUp`/`ArrowDown` do lucide-react. Aparecem dinamicamente conforme posição de scroll (threshold 200px). Design tiptap.dev (branco, circular, hover Google Blue). Paridade com admin-app e mainsite-frontend.
+
 ## [v02.15.01] — 2026-03-26
 ### Corrigido
 - **Notification.css**: classes CSS não correspondiam aos nomes do componente `Notification.tsx` (`notification-toast` → `notification`, `notification-icon` → removido, etc.). Toast aparecia sem estilização. Classes alinhadas: `notification`, `notification-body`, `notification-close`, `notification-progress`, `notification-container-desktop/mobile`.

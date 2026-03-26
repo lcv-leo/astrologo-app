@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNotification } from './components/Notification';
-import { Database, RefreshCw, Trash2, Star, Sun, Moon, Sparkles, Wind, Hash, BrainCircuit, Mail, Share2, Copy, Send, ShieldAlert, Save } from 'lucide-react';
+import { Database, RefreshCw, Trash2, Star, Sun, Moon, Sparkles, Wind, Hash, BrainCircuit, Mail, Share2, Copy, Send, ShieldAlert, Save, ArrowUp, ArrowDown } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import './App.css';
 
-const ADMIN_VERSION = "2.15.1";
+const ADMIN_VERSION = "2.16.0";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
@@ -535,6 +535,25 @@ export default function App() {
     setSendingEmail(false);
   };
 
+  /* ─── Floating Scroll Buttons ─── */
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+
+  useEffect(() => {
+    const THRESHOLD = 200;
+    const update = () => {
+      const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+      setShowScrollTop(scrollTop > THRESHOLD);
+      setShowScrollBottom(scrollHeight - scrollTop - clientHeight > THRESHOLD);
+    };
+    window.addEventListener('scroll', update, { passive: true });
+    update();
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+
+  const scrollTo = (dir: 'top' | 'bottom') =>
+    window.scrollTo({ top: dir === 'top' ? 0 : document.documentElement.scrollHeight, behavior: 'smooth' });
+
   return (
     <div className="app-shell">
       {/* Background Orbs */}
@@ -661,6 +680,22 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {/* Floating scroll buttons (paridade mainsite-frontend) */}
+      {(showScrollTop || showScrollBottom) && (
+        <div className="floating-scroll-btns">
+          {showScrollTop && (
+            <button type="button" className="floating-scroll-btn" onClick={() => scrollTo('top')} title="Voltar ao topo" aria-label="Voltar ao topo">
+              <ArrowUp size={20} />
+            </button>
+          )}
+          {showScrollBottom && (
+            <button type="button" className="floating-scroll-btn" onClick={() => scrollTo('bottom')} title="Ir para o final" aria-label="Ir para o final">
+              <ArrowDown size={20} />
+            </button>
+          )}
+        </div>
+      )}
 
       <footer className="app-footer">
         <span className="footer-version"><span className="footer-version-accent">ADMIN v{ADMIN_VERSION}</span></span>
