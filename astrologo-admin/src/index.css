@@ -1,68 +1,53 @@
-@import "tailwindcss";
+/* ─── Reset + Base — tiptap.dev Design Language ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-:root {
-  --md3-primary: #2563eb;
-  --md3-on-primary: #ffffff;
-  --md3-secondary: #475569;
-  --md3-tertiary: #4f46e5;
-  --md3-surface: #f8fafc;
-  --md3-surface-container: rgba(255, 255, 255, 0.64);
-  --md3-outline: rgba(255, 255, 255, 0.7);
-  --md3-shadow: 0 10px 30px rgba(37, 99, 235, 0.14);
-  --md3-ease: cubic-bezier(0.2, 0, 0, 1);
-}
-
-html,
-body {
-  margin: 0;
-  padding: 0;
+html, body {
   overflow-x: hidden;
-  background:
-    radial-gradient(110% 85% at 12% 0%, rgba(37, 99, 235, 0.14) 0%, rgba(248, 250, 252, 0) 40%),
-    radial-gradient(115% 95% at 100% 100%, rgba(99, 102, 241, 0.1) 0%, rgba(248, 250, 252, 0) 56%),
-    var(--md3-surface);
-  color: #1e293b;
-  font-feature-settings: 'ss01' on, 'cv01' on;
+  background: #f5f4f4;
+  color: #0d0d0d;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
 }
 
-#root {
-  isolation: isolate;
+::selection { background: rgba(26, 115, 232, 0.15); }
+
+#root { isolation: isolate; }
+
+/* ─── Background Orbs ─── */
+.bg-orb {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.20;
+  filter: blur(120px);
+  z-index: -1;
+}
+.bg-orb-1 { top: -8%; left: -6%; width: 30%; height: 30%; background: rgba(26, 115, 232, 0.25); }
+.bg-orb-2 { bottom: -8%; right: -6%; width: 30%; height: 30%; background: rgba(66, 133, 244, 0.18); }
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.12); border-radius: 20px; }
+::-webkit-scrollbar-thumb:hover { background-color: rgba(0,0,0,0.2); }
+
+/* ─── Focus-visible (WCAG) ─── */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-::selection {
-  background: rgba(37, 99, 235, 0.2);
-}
-
-.md3-glass {
-  background: var(--md3-surface-container);
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
-  border: 1px solid var(--md3-outline);
-  box-shadow: var(--md3-shadow);
-  transition: all 220ms var(--md3-ease);
-}
-
-.md3-glass:hover {
-  box-shadow: 0 14px 42px rgba(37, 99, 235, 0.2);
-}
-
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #fecdd3;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #fda4af;
+/* ─── Reduced Motion (WCAG) ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
