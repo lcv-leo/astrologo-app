@@ -1,5 +1,9 @@
 # Changelog — Astrólogo Admin
 
+## [v02.15.01] — 2026-03-26
+### Corrigido
+- **Notification.css**: classes CSS não correspondiam aos nomes do componente `Notification.tsx` (`notification-toast` → `notification`, `notification-icon` → removido, etc.). Toast aparecia sem estilização. Classes alinhadas: `notification`, `notification-body`, `notification-close`, `notification-progress`, `notification-container-desktop/mobile`.
+
 ## [v02.15.00] — 2026-03-26
 ### Alterado
 - **UI/UX Redesign (tiptap.dev, Google Blue)**: design completo reescrito seguindo design language do tiptap.dev
