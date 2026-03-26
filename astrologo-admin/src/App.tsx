@@ -4,7 +4,7 @@ import { Database, RefreshCw, Trash2, Star, Sun, Moon, Sparkles, Wind, Hash, Bra
 import DOMPurify from 'dompurify';
 import './App.css';
 
-const ADMIN_VERSION = "2.15.0";
+const ADMIN_VERSION = "2.15.1";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
