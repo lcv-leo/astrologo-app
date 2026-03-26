@@ -1,5 +1,27 @@
 # Changelog — Astrólogo Admin
 
+## [v02.15.00] — 2026-03-26
+### Alterado
+- **UI/UX Redesign (tiptap.dev, Google Blue)**: design completo reescrito seguindo design language do tiptap.dev
+- **Tailwind CSS removido**: todo CSS convertido para vanilla com classes semânticas (~700 linhas)
+- Background: warm gray `#f5f4f4`. Cards: sólido `#ffffff`, shadow `0 1px 3px`
+- Botões: pill preto (`border-radius: 100px`) com hover Google Blue `#1a73e8`
+- Inputs: `border-radius: 10px`, focus ring Google Blue
+- Tipografia Inter via Google Fonts com `letter-spacing: -0.02em` em headings
+- Orbs decorativos sutis (`opacity: 0.20, blur: 120px`)
+- Toast notifications: dark pill, bottom-right, blur backdrop
+- Favicon: SVG admin customizado (gear + monitor) em Google Blue `#1a73e8`
+
+### Adicionado
+- WCAG/eMAG: `focus-visible` outlines `#1a73e8`, `prefers-reduced-motion`, `sr-only`, skip-link semântico
+- `<meta name="theme-color">` para consistência visual
+- Form fields: `id`, `name`, `autoComplete` validados em todos os inputs
+
+### Removido
+- Dependência do Tailwind CSS (`@import "tailwindcss"`)
+- Glassmorphism pesado (backdrop-filter em cards)
+- Gradientes de background radiais
+
 ## [v02.14.01] — 2026-03-26
 ### Removido
 - **`_headers`**: arquivo removido — admins não precisam de CSP nem controles de cache (Cloudflare Access protege o app). Cache gerenciado nativamente pelo Cloudflare.
