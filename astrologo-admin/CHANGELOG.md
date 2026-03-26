@@ -1,5 +1,9 @@
 # Changelog — Astrólogo Admin
 
+## [v02.14.01] — 2026-03-26
+### Removido
+- **`_headers`**: arquivo removido — admins não precisam de CSP nem controles de cache (Cloudflare Access protege o app). Cache gerenciado nativamente pelo Cloudflare.
+
 ## [v02.14.00] — 2026-03-24
 ### Alterado
 - Migração de D1 para `bigdata_db` com tabelas prefixadas (`astrologo_mapas`, `astrologo_rate_limit_policies`)
