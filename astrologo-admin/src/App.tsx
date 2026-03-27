@@ -41,6 +41,19 @@ const formatarData = (dataStr: string): string => {
   if (!dataStr) return ''; const p = dataStr.split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : dataStr;
 };
 
+/* ─── Configurações ─── */
+interface AstroConfig {
+  modeloSintese?: string;
+}
+const DEFAULT_CONFIG: AstroConfig = { modeloSintese: '' };
+function loadConfig(): AstroConfig {
+  try {
+    const s = localStorage.getItem('astrologo-config');
+    return s ? { ...DEFAULT_CONFIG, ...JSON.parse(s) } : DEFAULT_CONFIG;
+  } catch { return DEFAULT_CONFIG; }
+}
+interface GeminiModelItem { id: string; displayName: string; api: string; vision: boolean; }
+
 const formatPosicaoLabel = (pos: string): string => {
   const p = pos.toUpperCase();
   if (p.includes('FAIXA') || p.includes('PERÍODO')) return 'FAIXA HORÁRIA (3H)';
@@ -188,6 +201,10 @@ export default function App() {
   const [loadingPolicies, setLoadingPolicies] = useState(false);
   const [savingPolicies, setSavingPolicies] = useState(false);
 
+  const [config, setConfig] = useState<AstroConfig>(loadConfig);
+  const [geminiModels, setGeminiModels] = useState<GeminiModelItem[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+
   const hasUnsavedPolicies = useMemo(() => {
     const normalize = (items: RateLimitPolicy[]) => [...items]
       .sort((a, b) => a.route.localeCompare(b.route))
@@ -242,6 +259,40 @@ export default function App() {
       setLoadingPolicies(false);
     }
   }, [showNotification]);
+
+  const carregarModelos = useCallback(async (): Promise<void> => {
+    setModelsLoading(true);
+    try {
+      const res = await fetch('/api/admin/modelos');
+      const data = await res.json() as { ok: boolean; models?: GeminiModelItem[] };
+      if (data.ok && data.models) setGeminiModels(data.models);
+    } catch { /* silencioso */ }
+    finally { setModelsLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    void carregarModelos();
+  }, [carregarModelos]);
+
+  const saveConfig = (patch: Partial<AstroConfig>) => {
+    const next = { ...config, ...patch };
+    setConfig(next);
+    localStorage.setItem('astrologo-config', JSON.stringify(next));
+    showNotification('Configuração salva.', 'success');
+  };
+
+  const renderModelSelect = (label: string, id: string, value: string | undefined, onChange: (v: string) => void) => (
+    <div className="field-group">
+      <label htmlFor={id} className="rate-input-label">{label}</label>
+      <select id={id} value={value || ''} onChange={e => onChange(e.target.value)} className="rate-input-field" style={{ width: '100%', padding: '12px', marginTop: '6px', backgroundColor: '#fff', cursor: 'pointer' }}>
+        {!value && <option value="">(Padrão do Sistema)</option>}
+        {geminiModels.map(m => (
+          <option key={m.id} value={m.id}>{m.displayName} ({m.api})</option>
+        ))}
+        {geminiModels.length === 0 && value && <option value={value}>{value}</option>}
+      </select>
+    </div>
+  );
 
   const salvarPoliticas = async (): Promise<void> => {
     setSavingPolicies(true);
@@ -658,6 +709,35 @@ export default function App() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* AI Model Config Section */}
+            <div className="card-tiptap card-tiptap-wide" style={{ padding: '20px', marginTop: '24px' }}>
+              <div className="rate-section-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <h3 className="rate-section-title"><BrainCircuit /> Modelos de IA (Gemini)</h3>
+                </div>
+                <div className="rate-section-actions">
+                  <button onClick={() => void carregarModelos()} disabled={modelsLoading} className="btn-rate-restore" title="Recarregar modelos">
+                    {modelsLoading ? 'Recarregando...' : 'Recarregar Modelos'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="rate-policies">
+                <div className="rate-card">
+                  <div className="rate-card-header">
+                    <span style={{ fontWeight: 'bold' }}>Modelo ativo na síntese astrológica</span>
+                  </div>
+                  <p className="rate-description" style={{ marginBottom: '16px' }}>Defina a versão da rede neural (Gemini API) a ser empregada para síntese global dos perfis.</p>
+                  {renderModelSelect(
+                    'Modelo de Síntese Astrológica',
+                    'model-sintese',
+                    config.modeloSintese,
+                    v => { setConfig(c => ({ ...c, modeloSintese: v })); saveConfig({ modeloSintese: v }); }
+                  )}
+                </div>
               </div>
             </div>
 

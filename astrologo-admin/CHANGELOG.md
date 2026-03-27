@@ -1,5 +1,9 @@
 # Changelog — Astrólogo Admin
 
+## [v02.17.00] — 2026-03-27
+### Adicionado
+- **Seleção de Modelos de IA**: Interface de configuração para definir o modelo Gemini ativo na síntese astrológica, com paridade de arquitetura ao admin-app/Oráculo. O modelo escolhido é salvo no cache local (`localStorage`) e lido no disparo das análises.
+
 ## [v02.16.00] — 2026-03-26
 ### Adicionado
 - **Botões flutuantes de rolagem**: FABs (Voltar ao topo / Ir para o final) com `ArrowUp`/`ArrowDown` do lucide-react. Aparecem dinamicamente conforme posição de scroll (threshold 200px). Design tiptap.dev (branco, circular, hover Google Blue). Paridade com admin-app e mainsite-frontend.
