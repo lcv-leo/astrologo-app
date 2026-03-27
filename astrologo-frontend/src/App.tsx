@@ -1,5 +1,5 @@
 // Módulo: astrologo-frontend/src/App.tsx
-// Versão: v02.17.00
+// Versão: v02.17.01
 // Descrição: Frontend principal do Oráculo Celestial com análise astrológica via Gemini.
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -7,10 +7,19 @@ import { Compass, Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, I
 import { useNotification } from './components/Notification';
 import DOMPurify from 'dompurify';
 
-const APP_VERSION = 'APP v02.17.00';
+const APP_VERSION = 'APP v02.17.01';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
+
+const formatPhone = (val: string) => {
+  const v = val.replace(/\D/g, '').substring(0, 11);
+  if (v.length === 0) return '';
+  if (v.length <= 2) return `(${v}`;
+  if (v.length <= 3) return `(${v.slice(0, 2)}) ${v.slice(2)}`;
+  if (v.length <= 7) return `(${v.slice(0, 2)}) ${v.slice(2, 3)} ${v.slice(3)}`;
+  return `(${v.slice(0, 2)}) ${v.slice(2, 3)} ${v.slice(3, 7)}-${v.slice(7)}`;
+};
 const sanitizeRichHtml = (html: string): string => DOMPurify.sanitize(html, {
   ALLOWED_TAGS: ['p', 'strong', 'ul', 'li', 'em', 'b', 'i', 'h1', 'h2', 'h3', 'br'],
   ALLOWED_ATTR: []
@@ -658,10 +667,10 @@ export default function App() {
             <h3 className="text-2xl font-black text-blue-600 mb-2">Mensagem do Mestre</h3>
             <p className="text-slate-600 mb-6 text-sm">Entre em contato, e responderemos o mais breve possível.</p>
             <form onSubmit={e => { e.preventDefault(); void handleContatoSubmit(); }} className="flex flex-col gap-3">
-              <input required type="text" placeholder="Seu Nome" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm" value={contatoForm.name} onChange={e => setContatoForm(p => ({ ...p, name: e.target.value }))} />
+              <input required id="contact-name" name="name" autoComplete="name" type="text" placeholder="Seu Nome" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm" value={contatoForm.name} onChange={e => setContatoForm(p => ({ ...p, name: e.target.value }))} />
               <div className="flex gap-3">
-                <input type="tel" placeholder="Telefone" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm" value={contatoForm.phone} onChange={e => setContatoForm(p => ({ ...p, phone: e.target.value }))} />
-                <input required type="email" placeholder="E-mail" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm" value={contatoForm.email} onChange={e => setContatoForm(p => ({ ...p, email: e.target.value }))} />
+                <input id="contact-phone" name="phone" autoComplete="tel-national" inputMode="tel" maxLength={16} type="tel" placeholder="Telefone" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm" value={contatoForm.phone} onChange={e => setContatoForm(p => ({ ...p, phone: formatPhone(e.target.value) }))} />
+                <input required id="contact-email" name="email" autoComplete="email" type="email" placeholder="E-mail" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm" value={contatoForm.email} onChange={e => setContatoForm(p => ({ ...p, email: e.target.value }))} />
               </div>
               <textarea required placeholder="Sua mensagem..." maxLength={500} rows={4} className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm resize-none" value={contatoForm.message} onChange={e => setContatoForm(p => ({ ...p, message: e.target.value }))} />
               <button type="submit" disabled={contatoSending} className="w-full mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold p-4 rounded-xl flex justify-center items-center gap-3 transition-all disabled:opacity-50 uppercase tracking-wider shadow-md text-sm">

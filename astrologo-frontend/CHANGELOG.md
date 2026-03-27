@@ -1,5 +1,9 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.01] — 2026-03-27
+### Corrigido
+- **Acessibilidade e UX**: adicionados atributos de autocompletar (`name`, `tel-national`, `email`) e formatador/máscara de telefone (`formatPhone`) aos inputs do Modal de Contato para garantir paridade com o Oráculo Financeiro.
+
 ## [v02.17.00] — 2026-03-27
 ### Adicionado
 - Autenticação por e-mail e token (OTP) implementada para acesso unificado e proteção dos dados do usuário.
