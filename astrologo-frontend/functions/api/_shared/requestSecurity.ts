@@ -7,10 +7,10 @@ export const securityHeaders = {
 } as const;
 
 export interface D1Statement<TFirst = unknown> {
-  bind: (...args: unknown[]) => {
-    first: () => Promise<TFirst>;
-    run: () => Promise<unknown>;
-  };
+  bind: (...args: unknown[]) => D1Statement<TFirst>;
+  first: () => Promise<TFirst | null>;
+  run: () => Promise<unknown>;
+  all: () => Promise<{ results: TFirst[] }>;
 }
 
 export interface D1DatabaseLike {

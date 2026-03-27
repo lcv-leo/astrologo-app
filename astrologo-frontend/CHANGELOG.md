@@ -1,5 +1,12 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.00] — 2026-03-27
+### Adicionado
+- Autenticação por e-mail e token (OTP) implementada para acesso unificado e proteção dos dados do usuário.
+- Fluxo completo para salvar, resgatar e excluir dados associados ao seu e-mail de forma segura (`astrologo_user_data` e `astrologo_mapas`).
+- Modal de Contato integrado via API Resend, com paridade aos demais sistemas.
+- Gerenciamento de sessão persistente no client interligado ao UUID de autenticação de 60 minutos D1.
+
 ## [v02.16.00] — 2026-03-24
 ### Alterado
 - Migração de D1 para `bigdata_db` com tabelas prefixadas (`astrologo_mapas`, `astrologo_api_rate_limits`, `astrologo_rate_limit_policies`)

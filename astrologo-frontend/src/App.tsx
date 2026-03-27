@@ -1,13 +1,13 @@
 // Módulo: astrologo-frontend/src/App.tsx
-// Versão: v02.16.00
+// Versão: v02.17.00
 // Descrição: Frontend principal do Oráculo Celestial com análise astrológica via Gemini.
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Compass, Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, Info, Star, MapPin, User, Calendar, Clock, X, HelpCircle, Mail, Send, RotateCcw } from 'lucide-react';
+import { Compass, Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, Info, Star, MapPin, User, Calendar, Clock, X, HelpCircle, Mail, Send, RotateCcw, Save, Download, Trash2, MessageSquare, Book } from 'lucide-react';
 import { useNotification } from './components/Notification';
 import DOMPurify from 'dompurify';
 
-const APP_VERSION = 'APP v02.16.00';
+const APP_VERSION = 'APP v02.17.00';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
@@ -27,6 +27,9 @@ interface AutocompleteProps { value: string; onChange: (v: string) => void; }
 interface BlocoProps { titulo: string; dadosAstrologia: AstroData[]; dadosUmbanda: UmbandaData[]; icon: React.ElementType; isTropical: boolean; onInfoClick: () => void; }
 interface ResultViewProps { result: ResultData; analiseIa: string; onSolicitarAnalise?: () => void; loadingAi?: boolean; openInfoModal: (t: 'astronomica' | 'tropical') => void; }
 interface GeoResult { name?: string; admin1?: string; country?: string; }
+
+type AuthMode = 'save' | 'retrieve' | 'delete' | null;
+type AuthStep = 'email' | 'token';
 
 const formatarData = (dataStr: string): string => {
   if (!dataStr) return ''; const p = dataStr.split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : dataStr;
@@ -432,6 +435,113 @@ export default function App() {
   const [modalType, setModalType] = useState<'astronomica' | 'tropical' | null>(null);
   const { showNotification } = useNotification();
 
+  // ── Auth & Session State ──
+  const [authMode, setAuthMode] = useState<AuthMode>(null);
+  const [authStep, setAuthStep] = useState<AuthStep>('email');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authToken, setAuthToken] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [mapasSalvos, setMapasSalvos] = useState<ResultData[]>([]);
+
+  // ── Contato State ──
+  const [showContato, setShowContato] = useState(false);
+  const [contatoForm, setContatoForm] = useState({ name: '', phone: '', email: '', message: '' });
+  const [contatoSending, setContatoSending] = useState(false);
+
+  useEffect(() => {
+    const sessionToken = sessionStorage.getItem('astrologo_session_token');
+    if (!sessionToken) return;
+    fetch('/api/astrologo-auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'session-retrieve', token: sessionToken })
+    }).then(res => res.json()).then(data => {
+      const payload = data as { ok: boolean; dados?: { mapasSalvos?: ResultData[] }; sessionToken?: string };
+      if (payload.ok && payload.dados?.mapasSalvos) {
+        setMapasSalvos(payload.dados.mapasSalvos);
+        sessionStorage.setItem('astrologo_session_token', payload.sessionToken!);
+      } else {
+        sessionStorage.removeItem('astrologo_session_token');
+      }
+    }).catch(() => {});
+  }, []);
+
+  const handleContatoSubmit = async () => {
+    setContatoSending(true);
+    try {
+      const res = await fetch('/api/contato', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(contatoForm) });
+      const data = await res.json() as { ok: boolean; message?: string; error?: string };
+      if (data.ok) {
+        showNotification(data.message ?? 'Mensagem enviada!', 'success');
+        setShowContato(false);
+        setContatoForm({ name: '', phone: '', email: '', message: '' });
+      } else {
+        showNotification(data.error ?? 'Erro ao enviar mensagem.', 'error');
+      }
+    } catch {
+      showNotification('Erro na comunicação.', 'error');
+    }
+    setContatoSending(false);
+  };
+
+  const handleAuthEmailSubmit = async () => {
+    if (!isValidEmail(authEmail)) {
+      showNotification('Insira um e-mail válido.', 'info');
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const action = authMode === 'save' ? 'save' : authMode === 'delete' ? 'request-delete-token' : 'request-token';
+      const body: Record<string, unknown> = { action, email: authEmail };
+      if (authMode === 'save') {
+        const novosMapas = result ? [result, ...mapasSalvos.filter(m => m.id !== result.id)] : mapasSalvos;
+        body.dados = { mapasSalvos: novosMapas };
+      }
+
+      const res = await fetch('/api/astrologo-auth', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+      const data = await res.json() as { ok: boolean; message?: string; error?: string };
+      if (data.ok) {
+        setAuthStep('token');
+        showNotification(data.message ?? 'Verifique seu e-mail.', 'info');
+      } else {
+        showNotification(data.error ?? 'Falha.', 'error');
+      }
+    } catch { showNotification('Erro na conexão.', 'error'); }
+    setAuthLoading(false);
+  };
+
+  const handleAuthTokenSubmit = async () => {
+    if (authToken.length !== 6) return;
+    setAuthLoading(true);
+    try {
+      const action = authMode === 'save' ? 'verify-save' : authMode === 'delete' ? 'verify-delete' : 'retrieve';
+      const res = await fetch('/api/astrologo-auth', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, email: authEmail, token: authToken })
+      });
+      const data = await res.json() as { ok: boolean; message?: string; error?: string; dados?: { mapasSalvos?: ResultData[] }; sessionToken?: string };
+      
+      if (data.ok) {
+        if (data.sessionToken) sessionStorage.setItem('astrologo_session_token', data.sessionToken);
+        
+        if (action === 'verify-delete') {
+          sessionStorage.removeItem('astrologo_session_token');
+          setMapasSalvos([]);
+          showNotification(data.message ?? 'Dados excluídos com sucesso.', 'success');
+        } else if (action === 'retrieve' || action === 'verify-save') {
+          if (data.dados?.mapasSalvos) setMapasSalvos(data.dados.mapasSalvos);
+          showNotification(data.message ?? 'Autenticado com sucesso.', 'success');
+        }
+        setAuthMode(null); setAuthStep('email'); setAuthEmail(''); setAuthToken('');
+      } else {
+        showNotification(data.error ?? 'Código incorreto.', 'error');
+      }
+    } catch { showNotification('Erro na conexão.', 'error'); }
+    setAuthLoading(false);
+  };
+
+
   const calcularMapa = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setAnaliseIa(''); setResult(null);
     try {
@@ -501,10 +611,98 @@ export default function App() {
         </form>
 
         {result && <ResultView result={result} analiseIa={analiseIa} onSolicitarAnalise={solicitarAnalise} loadingAi={loadingAi} openInfoModal={setModalType} />}
+
+        {/* Auth Action Buttons */}
+        <div className="w-full max-w-4xl mx-auto flex flex-col sm:flex-row justify-center gap-3 mt-8 animate-in fade-in">
+          <button onClick={() => setAuthMode('save')} type="button" className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-6 rounded-full transition shadow-md sm:flex-1 uppercase tracking-wider text-xs md:text-sm">
+            <Save className="w-4 h-4" /> Salvar na Nuvem
+          </button>
+          <button onClick={() => setAuthMode('retrieve')} type="button" className="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold py-3 px-6 rounded-full transition shadow-sm sm:flex-1 uppercase tracking-wider text-xs md:text-sm">
+            <Download className="w-4 h-4" /> Meus Mapas
+          </button>
+          <button onClick={() => setAuthMode('delete')} type="button" className="flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-3 px-6 rounded-full transition shadow-sm sm:flex-1 uppercase tracking-wider text-xs md:text-sm">
+            <Trash2 className="w-4 h-4" /> Excluir Dados
+          </button>
+        </div>
+
+        {/* Mapas Salvos List */}
+        {mapasSalvos.length > 0 && (
+          <div className="w-full max-w-4xl mx-auto mt-12 mb-8">
+            <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Book className="text-blue-500 w-5 h-5" /> Arquivo Akáshico do Consulente</h3>
+            <div className="grid sm:grid-cols-2 bg-white/60 backdrop-blur-xl p-4 md:p-6 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] gap-4">
+              {mapasSalvos.map((m) => (
+                <div key={m.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-1" onClick={() => { setResult(m); setAnaliseIa(''); window.scrollTo({ top: 300, behavior: 'smooth' }); }}>
+                  <strong className="text-slate-800 truncate block text-base">{m.query.nome}</strong>
+                  <span className="text-xs text-slate-500">{formatarData(m.query.dataNascimento)} às {m.query.horaNascimento}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-      <footer className="w-full py-6 mt-12 bg-white/40 backdrop-blur-md border-t border-white flex justify-center items-center shrink-0">
+
+      <footer className="w-full py-6 mt-12 bg-white/40 backdrop-blur-md border-t border-white flex flex-col justify-center items-center shrink-0 gap-4">
+        <div className="flex gap-4">
+          <button onClick={() => setShowContato(true)} className="flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-600 uppercase tracking-wider transition">
+            <MessageSquare className="w-4 h-4" /> Contato
+          </button>
+        </div>
         <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs flex items-center gap-2"><span className="opacity-70">Oráculo Celestial</span><span className="opacity-30">•</span><span className="text-blue-600">{APP_VERSION}</span></p>
       </footer>
+
+      {/* Contato Modal */}
+      {showContato && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowContato(false)}>
+          <div className="md3-glass bg-white/95 backdrop-blur-2xl border border-white p-6 md:p-8 rounded-[2.5rem] max-w-lg w-full shadow-2xl relative" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowContato(false)} className="absolute top-4 right-4 p-2 cursor-pointer bg-slate-100 hover:bg-slate-200 rounded-full transition"><X className="w-5 h-5 text-slate-600" /></button>
+            <h3 className="text-2xl font-black text-blue-600 mb-2">Mensagem do Mestre</h3>
+            <p className="text-slate-600 mb-6 text-sm">Entre em contato, e responderemos o mais breve possível.</p>
+            <form onSubmit={e => { e.preventDefault(); void handleContatoSubmit(); }} className="flex flex-col gap-3">
+              <input required type="text" placeholder="Seu Nome" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm" value={contatoForm.name} onChange={e => setContatoForm(p => ({ ...p, name: e.target.value }))} />
+              <div className="flex gap-3">
+                <input type="tel" placeholder="Telefone" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm" value={contatoForm.phone} onChange={e => setContatoForm(p => ({ ...p, phone: e.target.value }))} />
+                <input required type="email" placeholder="E-mail" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm" value={contatoForm.email} onChange={e => setContatoForm(p => ({ ...p, email: e.target.value }))} />
+              </div>
+              <textarea required placeholder="Sua mensagem..." maxLength={500} rows={4} className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm resize-none" value={contatoForm.message} onChange={e => setContatoForm(p => ({ ...p, message: e.target.value }))} />
+              <button type="submit" disabled={contatoSending} className="w-full mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold p-4 rounded-xl flex justify-center items-center gap-3 transition-all disabled:opacity-50 uppercase tracking-wider shadow-md text-sm">
+                {contatoSending ? <Sparkles className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />} Enviar Mensagem
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Auth Modal */}
+      {authMode && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" onClick={() => { setAuthMode(null); setAuthStep('email'); setAuthEmail(''); setAuthToken(''); }}>
+          <div className="md3-glass bg-white/95 backdrop-blur-2xl border border-white p-6 md:p-8 rounded-[2.5rem] max-w-sm w-full shadow-2xl relative text-center" onClick={e => e.stopPropagation()}>
+            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 relative">
+              {authMode === 'save' ? <Save className="w-8 h-8" /> : authMode === 'delete' ? <Trash2 className="w-8 h-8" /> : <Download className="w-8 h-8" />}
+            </div>
+            <h3 className="text-xl font-black text-slate-800 mb-2">{authMode === 'save' ? 'Salvar Análise' : authMode === 'delete' ? 'Excluir Dados' : 'Meus Mapas'}</h3>
+            {authStep === 'email' ? (
+              <>
+                <p className="text-slate-600 mb-6 text-sm">{authMode === 'save' ? 'Insira seu e-mail para salvar este mapa.' : authMode === 'delete' ? 'Insira o e-mail para excluir seus mapas salvos.' : 'Insira o e-mail vinculado aos seus mapas.'}</p>
+                <input autoFocus type="email" placeholder="seu@email.com" className="w-full p-4 mb-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-base text-center font-medium" value={authEmail} onChange={e => setAuthEmail(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void handleAuthEmailSubmit(); }} disabled={authLoading} />
+                <button type="button" onClick={() => void handleAuthEmailSubmit()} disabled={authLoading || !isValidEmail(authEmail)} className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl transition uppercase text-sm tracking-wider mb-3">
+                  {authLoading ? 'Processando...' : 'Enviar Código'}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-slate-600 mb-6 text-sm">Código de 6 dígitos enviado para <strong>{authEmail}</strong></p>
+                <input autoFocus type="text" inputMode="numeric" maxLength={6} placeholder="000000" className="w-full p-4 mb-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-3xl font-black text-center tracking-[0.5em] placeholder:tracking-normal font-mono" value={authToken} onChange={e => setAuthToken(e.target.value.replace(/\D/g, '').slice(0, 6))} onKeyDown={e => { if (e.key === 'Enter' && authToken.length === 6) void handleAuthTokenSubmit(); }} disabled={authLoading} />
+                <button type="button" onClick={() => void handleAuthTokenSubmit()} disabled={authLoading || authToken.length !== 6} className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl transition uppercase text-sm tracking-wider mb-3">
+                  {authLoading ? 'Verificando...' : 'Verificar e Confirmar'}
+                </button>
+              </>
+            )}
+            <button type="button" onClick={() => { setAuthMode(null); setAuthStep('email'); setAuthEmail(''); setAuthToken(''); }} className="w-full bg-white hover:bg-slate-50 text-slate-500 border border-slate-200 font-bold py-3 rounded-xl transition text-xs uppercase tracking-wider">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
