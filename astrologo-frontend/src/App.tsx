@@ -67,10 +67,10 @@ const InfoModal: React.FC<ModalProps> = ({ type, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="info-modal-title">
       <div className={`md3-glass bg-white/90 backdrop-blur-2xl border ${content.borderColor} p-6 md:p-8 rounded-3xl max-w-2xl w-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] relative overflow-y-auto max-h-[90vh]`}>
         <button onClick={onClose} aria-label="Fechar Modal" title="Fechar Modal" className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition"><X className="w-5 h-5 text-slate-600" /></button>
-        <h2 className={`text-2xl md:text-3xl font-black ${content.titleColor} flex items-center gap-3 mb-6 border-b border-slate-200 pb-4`}>{content.icon} {content.titulo}</h2>
+        <h2 id="info-modal-title" className={`text-2xl md:text-3xl font-black ${content.titleColor} flex items-center gap-3 mb-6 border-b border-slate-200 pb-4`}>{content.icon} {content.titulo}</h2>
         <div className="text-slate-700 text-sm md:text-base leading-relaxed space-y-4 [&_p]:text-justify" dangerouslySetInnerHTML={{ __html: content.texto }} />
         <button onClick={onClose} aria-label="Compreendido" className="mt-8 w-full py-4 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold uppercase tracking-wider transition shadow-lg text-base">Compreendido</button>
       </div>
@@ -82,10 +82,10 @@ const EmailModal: React.FC<EmailModalProps> = ({ isOpen, onClose, onSend, isSend
   const [email, setEmail] = useState('');
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="email-modal-title">
       <div className="md3-glass bg-white/90 backdrop-blur-2xl border border-white p-6 md:p-8 rounded-3xl max-w-md w-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] relative">
         <button onClick={onClose} disabled={isSending} aria-label="Fechar Modal E-mail" title="Fechar" className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition disabled:opacity-50"><X className="w-5 h-5 text-slate-600" /></button>
-        <h2 className="text-xl md:text-2xl font-black text-blue-600 flex items-center gap-3 mb-4"><Mail className="w-6 h-6" /> Enviar Dossiê Celestial</h2>
+        <h2 id="email-modal-title" className="text-xl md:text-2xl font-black text-blue-600 flex items-center gap-3 mb-4"><Mail className="w-6 h-6" /> Enviar Dossiê Celestial</h2>
         <p className="text-slate-600 text-sm md:text-base mb-6 leading-relaxed">Insira o endereço de e-mail para receber o relatório astrológico completo e a análise da IA.</p>
         <label htmlFor="emailConsulente" className="sr-only">Endereço de E-mail</label>
         <input type="email" id="emailConsulente" name="email" autoComplete="email" placeholder="usuario@email.com" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition shadow-inner mb-6 text-base" value={email} onChange={e => setEmail(e.target.value)} disabled={isSending} />
@@ -661,10 +661,10 @@ export default function App() {
 
       {/* Contato Modal */}
       {showContato && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowContato(false)}>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title" onClick={() => setShowContato(false)}>
           <div className="md3-glass bg-white/95 backdrop-blur-2xl border border-white p-6 md:p-8 rounded-[2.5rem] max-w-lg w-full shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setShowContato(false)} className="absolute top-4 right-4 p-2 cursor-pointer bg-slate-100 hover:bg-slate-200 rounded-full transition"><X className="w-5 h-5 text-slate-600" /></button>
-            <h3 className="text-2xl font-black text-blue-600 mb-2">Mensagem do Mestre</h3>
+            <h3 id="contact-modal-title" className="text-2xl font-black text-blue-600 mb-2">Mensagem do Mestre</h3>
             <p className="text-slate-600 mb-6 text-sm">Entre em contato, e responderemos o mais breve possível.</p>
             <form onSubmit={e => { e.preventDefault(); void handleContatoSubmit(); }} className="flex flex-col gap-3">
               <input required id="contact-name" name="name" autoComplete="name" type="text" placeholder="Seu Nome" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm" value={contatoForm.name} onChange={e => setContatoForm(p => ({ ...p, name: e.target.value }))} />
@@ -672,7 +672,8 @@ export default function App() {
                 <input id="contact-phone" name="phone" autoComplete="tel-national" inputMode="tel" maxLength={16} type="tel" placeholder="Telefone" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm" value={contatoForm.phone} onChange={e => setContatoForm(p => ({ ...p, phone: formatPhone(e.target.value) }))} />
                 <input required id="contact-email" name="email" autoComplete="email" type="email" placeholder="E-mail" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm" value={contatoForm.email} onChange={e => setContatoForm(p => ({ ...p, email: e.target.value }))} />
               </div>
-              <textarea required placeholder="Sua mensagem..." maxLength={500} rows={4} className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm resize-none" value={contatoForm.message} onChange={e => setContatoForm(p => ({ ...p, message: e.target.value }))} />
+              <label htmlFor="contact-message-text" className="sr-only">Sua mensagem</label>
+              <textarea id="contact-message-text" name="message" autoComplete="off" required placeholder="Sua mensagem..." maxLength={500} rows={4} className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm resize-none" value={contatoForm.message} onChange={e => setContatoForm(p => ({ ...p, message: e.target.value }))} />
               <button type="submit" disabled={contatoSending} className="w-full mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold p-4 rounded-xl flex justify-center items-center gap-3 transition-all disabled:opacity-50 uppercase tracking-wider shadow-md text-sm">
                 {contatoSending ? <Sparkles className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />} Enviar Mensagem
               </button>
@@ -683,16 +684,17 @@ export default function App() {
 
       {/* Auth Modal */}
       {authMode && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" onClick={() => { setAuthMode(null); setAuthStep('email'); setAuthEmail(''); setAuthToken(''); }}>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" onClick={() => { setAuthMode(null); setAuthStep('email'); setAuthEmail(''); setAuthToken(''); }}>
           <div className="md3-glass bg-white/95 backdrop-blur-2xl border border-white p-6 md:p-8 rounded-[2.5rem] max-w-sm w-full shadow-2xl relative text-center" onClick={e => e.stopPropagation()}>
             <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 relative">
               {authMode === 'save' ? <Save className="w-8 h-8" /> : authMode === 'delete' ? <Trash2 className="w-8 h-8" /> : <Download className="w-8 h-8" />}
             </div>
-            <h3 className="text-xl font-black text-slate-800 mb-2">{authMode === 'save' ? 'Salvar Análise' : authMode === 'delete' ? 'Excluir Dados' : 'Meus Mapas'}</h3>
+            <h3 id="auth-modal-title" className="text-xl font-black text-slate-800 mb-2">{authMode === 'save' ? 'Salvar Análise' : authMode === 'delete' ? 'Excluir Dados' : 'Meus Mapas'}</h3>
             {authStep === 'email' ? (
               <>
                 <p className="text-slate-600 mb-6 text-sm">{authMode === 'save' ? 'Insira seu e-mail para salvar este mapa.' : authMode === 'delete' ? 'Insira o e-mail para excluir seus mapas salvos.' : 'Insira o e-mail vinculado aos seus mapas.'}</p>
-                <input autoFocus type="email" placeholder="seu@email.com" className="w-full p-4 mb-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-base text-center font-medium" value={authEmail} onChange={e => setAuthEmail(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void handleAuthEmailSubmit(); }} disabled={authLoading} />
+                <label htmlFor="astro-auth-email" className="sr-only">Endereço de e-mail</label>
+                <input id="astro-auth-email" name="email" autoComplete="email" autoFocus type="email" placeholder="seu@email.com" aria-label="Endereço de e-mail" className="w-full p-4 mb-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-base text-center font-medium" value={authEmail} onChange={e => setAuthEmail(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void handleAuthEmailSubmit(); }} disabled={authLoading} />
                 <button type="button" onClick={() => void handleAuthEmailSubmit()} disabled={authLoading || !isValidEmail(authEmail)} className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl transition uppercase text-sm tracking-wider mb-3">
                   {authLoading ? 'Processando...' : 'Enviar Código'}
                 </button>
@@ -700,7 +702,8 @@ export default function App() {
             ) : (
               <>
                 <p className="text-slate-600 mb-6 text-sm">Código de 6 dígitos enviado para <strong>{authEmail}</strong></p>
-                <input autoFocus type="text" inputMode="numeric" maxLength={6} placeholder="000000" className="w-full p-4 mb-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-3xl font-black text-center tracking-[0.5em] placeholder:tracking-normal font-mono" value={authToken} onChange={e => setAuthToken(e.target.value.replace(/\D/g, '').slice(0, 6))} onKeyDown={e => { if (e.key === 'Enter' && authToken.length === 6) void handleAuthTokenSubmit(); }} disabled={authLoading} />
+                <label htmlFor="astro-auth-token" className="sr-only">Código de verificação</label>
+                <input id="astro-auth-token" name="oneTimeCode" autoComplete="one-time-code" autoFocus type="text" inputMode="numeric" maxLength={6} placeholder="000000" aria-label="Código de verificação" className="w-full p-4 mb-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-3xl font-black text-center tracking-[0.5em] placeholder:tracking-normal font-mono" value={authToken} onChange={e => setAuthToken(e.target.value.replace(/\D/g, '').slice(0, 6))} onKeyDown={e => { if (e.key === 'Enter' && authToken.length === 6) void handleAuthTokenSubmit(); }} disabled={authLoading} />
                 <button type="button" onClick={() => void handleAuthTokenSubmit()} disabled={authLoading || authToken.length !== 6} className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl transition uppercase text-sm tracking-wider mb-3">
                   {authLoading ? 'Verificando...' : 'Verificar e Confirmar'}
                 </button>
