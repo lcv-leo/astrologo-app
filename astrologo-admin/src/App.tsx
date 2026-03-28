@@ -4,7 +4,7 @@ import { Database, RefreshCw, Trash2, Star, Sun, Moon, Sparkles, Wind, Hash, Bra
 import DOMPurify from 'dompurify';
 import './App.css';
 
-const ADMIN_VERSION = "2.16.0";
+const ADMIN_VERSION = "2.17.1";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
@@ -617,7 +617,7 @@ export default function App() {
       <div className="app-content">
         <header className="app-header">
           <div className="header-icon-box"><Database /></div>
-          <h1 className="app-title">CÂMARA DO MESTRE</h1>
+          <h1 className="app-title">CÂMARA DO MESTRE (Aposentado)</h1>
         </header>
 
         {loadingList ? (

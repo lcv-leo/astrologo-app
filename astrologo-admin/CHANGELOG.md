@@ -1,5 +1,9 @@
 # Changelog — Astrólogo Admin
 
+## [v02.17.01] — 28/03/2026
+### Removido
+- **Painel Desativado**: As rotinas automáticas de deploy (GitHub Actions) e o escaneamento de dependências (Dependabot) foram encerrados permanentemente. O projeto central `admin-app` assumiu 100% de paridade das funções. Este repositório encontra-se isolado e com entregas congeladas.
+
 ## [v02.17.00] — 2026-03-27
 ### Adicionado
 - **Seleção de Modelos de IA**: Interface de configuração para definir o modelo Gemini ativo na síntese astrológica, com paridade de arquitetura ao admin-app/Oráculo. O modelo escolhido é salvo no cache local (`localStorage`) e lido no disparo das análises.

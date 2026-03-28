@@ -29,7 +29,6 @@ jobs:
           cache: npm
           cache-dependency-path: |
             ./astrologo-frontend/package-lock.json
-            ./astrologo-admin/package-lock.json
 
       - name: Install, Build e Deploy Frontend
         working-directory: ./astrologo-frontend
@@ -41,12 +40,4 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Install, Build e Deploy Admin
-        working-directory: ./astrologo-admin
-        run: |
-          npm install
-          npm run build
-          npx wrangler@${WRANGLER_VERSION} pages deploy dist --project-name=astrologo-admin --branch=production --commit-dirty=true
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
