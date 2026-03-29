@@ -1,5 +1,12 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.02] — 2026-03-29
+### Alterado
+- **CI/CD branch standardization**: workflow de deploy do monorepo `astrologo-app` padronizado para publicar no branch `main` na Cloudflare Pages, com trigger GitHub em `main` e `concurrency.group` atualizado para `deploy-main`.
+
+### Controle de versão
+- `astrologo-frontend`: APP v02.17.01 → APP v02.17.02
+
 ## [v02.17.01] — 2026-03-27
 ### Corrigido
 - **Acessibilidade e UX**: adicionados atributos de autocompletar (`name`, `tel-national`, `email`) e formatador/máscara de telefone (`formatPhone`) aos inputs do Modal de Contato para garantir paridade com o Oráculo Financeiro.
