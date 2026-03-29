@@ -1,5 +1,5 @@
 // Módulo: astrologo-frontend/src/App.tsx
-// Versão: v02.17.01
+// Versão: v02.17.02
 // Descrição: Frontend principal do Oráculo Celestial com análise astrológica via Gemini.
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -7,7 +7,7 @@ import { Compass, Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, I
 import { useNotification } from './components/Notification';
 import DOMPurify from 'dompurify';
 
-const APP_VERSION = 'APP v02.17.01';
+const APP_VERSION = 'APP v02.17.02';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
