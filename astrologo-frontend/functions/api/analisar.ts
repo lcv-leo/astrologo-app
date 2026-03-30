@@ -74,7 +74,10 @@ const sanitizeGeneratedHtml = (input: string): string => {
     .replace(/<\s*(script|style|iframe|object|embed|link|meta|base|form|input|button|textarea|select|svg|math)[^>]*\/?>/gi, '')
     .replace(/\son\w+\s*=\s*(['"]).*?\1/gi, '')
     .replace(/\sstyle\s*=\s*(['"]).*?\1/gi, '')
+    .replace(/\s(href|src)\s*=\s*(['"])\s*(javascript|data|vbscript)\s*:[\s\S]*?\2/gi, '')
     .replace(/javascript:/gi, '')
+    .replace(/data:/gi, '')
+    .replace(/vbscript:/gi, '')
     .replace(/<(?!\/?(p|strong|ul|li|em|b|i|h1|h2|h3|br)\b)[^>]*>/gi, '')
     .replace(/<(p|strong|ul|li|em|b|i|h1|h2|h3|br)\s[^>]*>/gi, '<$1>')
     .trim();
