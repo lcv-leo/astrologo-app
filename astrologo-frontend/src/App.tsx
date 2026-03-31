@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2026 Leonardo Cardozo Vargas
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 // Módulo: astrologo-frontend/src/App.tsx
 // Versão: v02.17.02
 // Descrição: Frontend principal do Oráculo Celestial com análise astrológica via Gemini.

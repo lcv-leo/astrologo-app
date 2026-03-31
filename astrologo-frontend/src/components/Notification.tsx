@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2026 Leonardo Cardozo Vargas
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
