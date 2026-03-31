@@ -25,6 +25,15 @@ const sanitizeRichHtml = (html: string): string => DOMPurify.sanitize(html, {
   ALLOWED_ATTR: []
 });
 
+const htmlToPlainText = (html: string): string => {
+  if (typeof DOMParser === 'undefined') {
+    return html;
+  }
+
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return (doc.body.textContent ?? '').replace(/\u00a0/g, ' ');
+};
+
 interface AstroData { astro: string; signo: string; simbolo: string; }
 interface UmbandaData { posicao: string; orixa: string; simbolo: string; }
 interface DadosGlobais { tatwa: { principal: string; sub: string; }; numerologia: { expressao: number; caminhoVida: number; vibracaoHora: number; }; }
@@ -231,7 +240,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
     t += blocoTexto(result.dadosAstronomica);
 
     if (analiseIa) {
-      const iaTxt = analiseIa.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<strong>(.*?)<\/strong>/gi, '*$1*').replace(/<b>(.*?)<\/b>/gi, '*$1*').replace(/<em>(.*?)<\/em>/gi, '_$1_').replace(/<i>(.*?)<\/i>/gi, '_$1_').replace(/<li>(.*?)<\/li>/gi, '• $1\n').replace(/<\/ul>/gi, '\n').replace(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi, '\n*$1*\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
+      const iaTxt = htmlToPlainText(analiseIa);
       t += divider;
       t += `*🧠 SÍNTESE DO MESTRE (IA)*\n\n` + iaTxt.replace(/\n{3,}/g, '\n\n').trim() + `\n`;
     }
