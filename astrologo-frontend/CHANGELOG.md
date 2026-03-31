@@ -1,5 +1,14 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.03] — 2026-03-31
+### Alterado
+- **Fluxo indireto `preview` padronizado**: branch operacional `preview` adotado no monorepo para promoções consistentes para `main`.
+- **Automação de promoção**: workflow `.github/workflows/preview-auto-pr.yml` adicionado/atualizado para abrir/reusar PR `preview -> main`, habilitar auto-merge e tentar merge imediato quando elegível.
+- **Permissões do GitHub Actions**: ajuste para permitir criação/aprovação de PR por workflow, eliminando falhas 403 operacionais.
+
+### Controle de versão
+- `astrologo-frontend`: APP v02.17.02 → APP v02.17.03
+
 ## [v02.17.02] — 2026-03-29
 ### Alterado
 - **CI/CD branch standardization**: workflow de deploy do monorepo `astrologo-app` padronizado para publicar no branch `main` na Cloudflare Pages, com trigger GitHub em `main` e `concurrency.group` atualizado para `deploy-main`.
