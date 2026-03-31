@@ -1,5 +1,12 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.06] - 2026-03-31
+### Corrigido
+- **Compliance - docs legais locais em runtime**: o `LicencasModule` passou a carregar `LICENSE`, `NOTICE` e `THIRDPARTY` a partir de `public/legal/*` via `BASE_URL`, eliminando dependência de `raw.githubusercontent.com` no browser e removendo os 404 recorrentes em produção.
+
+### Controle de versão
+- `astrologo-app`: APP v02.17.05 → APP v02.17.06
+
 ## [v02.17.05] - 2026-03-31
 ### Adicionado
 - **Governança de Licenciamento (GNU AGPLv3)**: Inserção do `LicencasModule` e `ComplianceBanner` no frontend para fechamento do SaaS Loophole com conformidade total.
