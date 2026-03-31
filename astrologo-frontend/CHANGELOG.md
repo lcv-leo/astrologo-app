@@ -1,5 +1,12 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.05] - 2026-03-31
+### Adicionado
+- **Governança de Licenciamento (GNU AGPLv3)**: Inserção do `LicencasModule` e `ComplianceBanner` no frontend para fechamento do SaaS Loophole com conformidade total.
+
+### Controle de versão
+- `astrologo-app`: APP v02.17.04 -> APP v02.17.05
+
 ## [v02.17.04] - 2026-03-31
 ### Corrigido
 - **Compliance - GNU AGPLv3**: corrigido erro 404 no invólucro do arquivo LICENSE, publicando o texto integral da licença (~34KB) em conformidade técnica e jurídica.
