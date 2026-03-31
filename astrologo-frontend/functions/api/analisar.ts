@@ -66,21 +66,31 @@ const countTokensEndpoint = (apiKey: string) =>
 const generateContentEndpoint = (apiKey: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_CONFIG.model}:generateContent?key=${apiKey}`;
 
-const sanitizeGeneratedHtml = (input: string): string => {
-  const withoutFences = input.replace(/```html/gi, '').replace(/```/g, '');
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
-  return withoutFences
-    .replace(/<\s*(script|style|iframe|object|embed|link|meta|base|form|input|button|textarea|select|svg|math)[^>]*>[\s\S]*?<\s*\/\s*\1>/gi, '')
-    .replace(/<\s*(script|style|iframe|object|embed|link|meta|base|form|input|button|textarea|select|svg|math)[^>]*\/?>/gi, '')
-    .replace(/\son\w+\s*=\s*(['"]).*?\1/gi, '')
-    .replace(/\sstyle\s*=\s*(['"]).*?\1/gi, '')
-    .replace(/\s(href|src)\s*=\s*(['"])\s*(javascript|data|vbscript)\s*:[\s\S]*?\2/gi, '')
-    .replace(/javascript:/gi, '')
-    .replace(/data:/gi, '')
-    .replace(/vbscript:/gi, '')
-    .replace(/<(?!\/?(p|strong|ul|li|em|b|i|h1|h2|h3|br)\b)[^>]*>/gi, '')
-    .replace(/<(p|strong|ul|li|em|b|i|h1|h2|h3|br)\s[^>]*>/gi, '<$1>')
+const sanitizeGeneratedHtml = (input: string): string => {
+  const normalized = input
+    .replace(/```html/gi, '')
+    .replace(/```/g, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
     .trim();
+
+  if (!normalized) {
+    return '<p>Perturbação no éter na geração.</p>';
+  }
+
+  const escaped = escapeHtml(normalized);
+  return escaped
+    .split(/\n{2,}/)
+    .map((block) => `<p>${block.replace(/\n/g, '<br>')}</p>`)
+    .join('');
 };
 
 /**
