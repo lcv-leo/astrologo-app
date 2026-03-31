@@ -9,9 +9,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Compass, Moon, Sun, Wind, Hash, Sparkles, BrainCircuit, Copy, Share2, Info, Star, MapPin, User, Calendar, Clock, X, HelpCircle, Mail, Send, RotateCcw, Save, Download, Trash2, MessageSquare, Book } from 'lucide-react';
 import { useNotification } from './components/Notification';
+import { ComplianceBanner } from './components/ComplianceBanner';
+import { LicencasModule } from './modules/compliance/LicencasModule';
 import DOMPurify from 'dompurify';
 
-const APP_VERSION = 'APP v02.17.04';
+const APP_VERSION = 'APP v02.17.05';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
@@ -464,6 +466,7 @@ export default function App() {
   const [authToken, setAuthToken] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [mapasSalvos, setMapasSalvos] = useState<ResultData[]>([]);
+  const [showLicenses, setShowLicenses] = useState(false);
 
   // ── Contato State ──
   const [showContato, setShowContato] = useState(false);
@@ -594,6 +597,7 @@ export default function App() {
       <div className="absolute inset-0 bg-slate-50 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/50 via-slate-50 to-purple-50/50 -z-10 fixed"></div>
       <InfoModal type={modalType} onClose={() => setModalType(null)} />
 
+      {!showLicenses ? (
       <div className="max-w-6xl mx-auto w-full flex flex-col items-center flex-grow p-3 sm:p-6 md:p-8">
         <header className="text-center mb-10 md:mb-14 w-full flex flex-col items-center px-2 pt-4">
           <div className="p-4 bg-white/60 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white mb-6"><Compass className="w-12 h-12 md:w-16 md:h-16 text-blue-600" /></div>
@@ -662,6 +666,21 @@ export default function App() {
           </div>
         )}
       </div>
+      ) : (
+        <div className="max-w-6xl mx-auto w-full flex flex-col flex-grow p-3 sm:p-6 md:p-8 mt-10">
+          <div className="bg-white/80 backdrop-blur-2xl p-6 md:p-10 rounded-[2.5rem] border border-white shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
+            <LicencasModule />
+            <div className="flex justify-center mt-8 mb-4">
+              <button 
+                onClick={() => setShowLicenses(false)} 
+                type="button"
+                className="bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold py-3 px-8 rounded-xl transition shadow-sm uppercase tracking-wider text-sm">
+                Voltar ao Oráculo Celestial
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="w-full py-6 mt-12 bg-white/40 backdrop-blur-md border-t border-white flex flex-col justify-center items-center shrink-0 gap-4">
         <div className="flex gap-4">
@@ -671,6 +690,7 @@ export default function App() {
         </div>
         <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs flex items-center gap-2"><span className="opacity-70">Oráculo Celestial</span><span className="opacity-30">•</span><span className="text-blue-600">{APP_VERSION}</span></p>
       </footer>
+      <ComplianceBanner onViewLicenses={() => setShowLicenses(true)} />
 
       {/* Contato Modal */}
       {showContato && (
