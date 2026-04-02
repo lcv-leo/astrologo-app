@@ -2,35 +2,16 @@
 // Versão: v02.15.01 + Gemini v1beta Modernization
 // Descrição: API de análise astrológica via Gemini v1beta com token counting, structured outputs, e caching otimizado.
 
-import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, rateLimitHeaders, resolveRateLimitConfig, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
+import { getCorsHeaders, hasDisallowedOrigin, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
+import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai';
 
 // ==== TYPES PARA GOOGLE GEMINI API v1beta ====
-interface EnvBindings { GEMINI_API_KEY: string; BIGDATA_DB: D1DatabaseLike; }
+interface EnvBindings { 
+  GEMINI_API_KEY: string; 
+  BIGDATA_DB: D1DatabaseLike; 
+  GLOBAL_RATE_LIMITER: { limit: (options: { key: string }) => Promise<{ success: boolean }> };
+}
 interface Context { request: Request; env: EnvBindings; }
-
-/** Response do countTokens API (docs: v1beta/models:countTokens) */
-interface TokenCountResponse {
-  totalTokens?: number;
-}
-
-/** Response do generateContent API (docs: v1beta/models:generateContent) */
-interface GeminiGenerateContentResponse {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{
-        text?: string;
-        thought?: boolean; // Ignorado se present (thinking model)
-      }>;
-    };
-    finishReason?: string; // STOP, MAX_TOKENS, SAFETY, etc
-  }>;
-  usageMetadata?: {
-    promptTokenCount?: number;
-    cachedContentTokenCount?: number;
-    candidatesTokenCount?: number;
-    totalTokenCount?: number;
-  };
-}
 
 /**
  * Logging estruturado com timestamp e contexto
@@ -47,24 +28,13 @@ function structuredLog(level: 'INFO' | 'WARN' | 'ERROR', message: string, contex
   console.log(JSON.stringify(logEntry));
 }
 
-const RATE_LIMIT = { route: 'astrologo/analisar', limit: 6, windowMs: 15 * 60 * 1000 };
-
 // Configuração de modelo e valores de geração otimizados (Gemini v1beta)
-const GEMINI_CONFIG = {
-  model: 'gemini-pro-latest', // Latest stable, com fallback automático
+const GEMINI_CONFIG_DEFAULTS = {
+  model: 'gemini-2.5-flash', // Fallback dinâmico padrão
   apiVersion: 'v1beta',
   maxOutputTokens: 8192, // Limite robusto de output (docs: importante para controle de custo)
-  thinkingLevel: 'HIGH', // Raciocínio profundo para análises complexas
   cachedContentTTL: '3600s', // 1h cache de contexto (docs: reduz custo de prompt repetido)
 };
-
-// Endpoint para token counting (docs: countTokens API v1beta)
-const countTokensEndpoint = (apiKey: string) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_CONFIG.model}:countTokens?key=${apiKey}`;
-
-// Endpoint para generateContent (docs: streaming disponível em v1beta)
-const generateContentEndpoint = (apiKey: string) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_CONFIG.model}:generateContent?key=${apiKey}`;
 
 const escapeHtml = (value: string): string =>
   value
@@ -94,27 +64,16 @@ const sanitizeGeneratedHtml = (input: string): string => {
 };
 
 /**
- * Conta tokens da requisição (docs: countTokens API v1beta)
+ * Conta tokens da requisição usando @google/genai SDK
  * Permite validação pré-envio e otimização de custos
  */
-const estimateTokenCount = async (prompt: string, apiKey: string): Promise<number> => {
+const estimateTokenCount = async (ai: GoogleGenAI, prompt: string, model: string): Promise<number> => {
   try {
-    const resp = await fetch(countTokensEndpoint(apiKey), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          thinkingConfig: { thinkingLevel: GEMINI_CONFIG.thinkingLevel }
-        }
-      })
+    const resp = await ai.models.countTokens({
+      model,
+      contents: prompt
     });
-    if (!resp.ok) {
-      structuredLog('WARN', 'Token counting falhou, continuando sem contagem', { statusCode: resp.status });
-      return -1; // Fallback sem contagem
-    }
-    const data = await resp.json() as TokenCountResponse;
-    return data.totalTokens || -1;
+    return resp.totalTokens ?? -1;
   } catch (err) {
     structuredLog('WARN', 'Erro ao contar tokens', { error: String(err) });
     return -1;
@@ -136,18 +95,21 @@ export async function onRequestPost(context: Context) {
     });
   }
 
-  const activeRateLimit = await resolveRateLimitConfig(env.BIGDATA_DB, RATE_LIMIT);
+  const ipForRatelimit = request.headers.get("CF-Connecting-IP") || "unknown";
+  
+  // Utilização nativa do Cloudflare Rate Limiter Binding via wrangler.json `GLOBAL_RATE_LIMITER`
+  let rateLimitAllowed = true;
+  if (env.GLOBAL_RATE_LIMITER) {
+    const { success } = await env.GLOBAL_RATE_LIMITER.limit({ key: `astrologo/analisar:${ipForRatelimit}` });
+    rateLimitAllowed = success;
+  } else {
+    structuredLog('WARN', 'GLOBAL_RATE_LIMITER env binding não está injetado na cloudflare. Ratelimiting ignorado!');
+  }
 
-  const rateLimit = activeRateLimit.enabled
-    ? await enforceRateLimit(env.BIGDATA_DB, request, activeRateLimit)
-    : { allowed: true, limit: activeRateLimit.limit, remaining: activeRateLimit.limit, resetAt: Date.now() + activeRateLimit.windowMs };
-
-  const limitHeaders = rateLimitHeaders(rateLimit);
-
-  if (!rateLimit.allowed) {
+  if (!rateLimitAllowed) {
     return new Response(JSON.stringify({ success: false, error: "Muitas análises em sequência. Aguarde antes de solicitar outra." }), {
       status: 429,
-      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
     });
   }
 
@@ -158,7 +120,7 @@ export async function onRequestPost(context: Context) {
     if (!dadosAstronomica || !dadosTropical || !dadosGlobais || !query) {
       return new Response(JSON.stringify({ success: false, error: "Dados insuficientes para análise." }), {
         status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+        headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
       });
     }
 
@@ -180,108 +142,92 @@ Retorne APENAS HTML formatado em <p>, <strong>, <ul>, <li>. Sem marcações mark
 
 USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o texto: símbolos dos astros e planetas (☀️🌙⭐✨🪐💫🌟), dos signos do zodíaco (♈♉♊♋♌♍♎♏♐♑♒♓⛎), dos Orixás e entidades (⚔️🌊🔥🌿🌪️⚡🏹🌹🕯️💀🌺), de elementos esotéricos e místicos (🔮🧿📿☯️🌀🗝️🌑🌕), além de outros símbolos de reforço narrativo (🧠💡⚖️🌐🔗💎🛡️). Coloque-os no início dos títulos e seções, e intercale-os nos parágrafos para enriquecer a leitura e destacar conceitos-chave.`;
 
-    // ==== PASSO 1: Token Counting (docs: countTokens API v1beta - best practice) ====
-    structuredLog('INFO', 'Iniciando análise astrológica com Gemini v1beta', { prompt_length: prompt.length });
+    // ==== DYNAMIC MODEL CONFIGURATION VIA BIGDATA_DB ====
+    let selectedModel = GEMINI_CONFIG_DEFAULTS.model;
+    if (env.BIGDATA_DB && typeof env.BIGDATA_DB.prepare === 'function') {
+      try {
+        const configRow = await env.BIGDATA_DB.prepare(
+          "SELECT config_json FROM admin_config_store WHERE config_key = 'astrologo-config' LIMIT 1"
+        ).first() as { config_json?: string } | null;
+        if (configRow && configRow.config_json) {
+          const parsedConfig = JSON.parse(configRow.config_json);
+          if (parsedConfig && typeof parsedConfig.modeloIA === 'string' && parsedConfig.modeloIA.trim()) {
+            selectedModel = parsedConfig.modeloIA.trim();
+          }
+        }
+      } catch (err) {
+        structuredLog('WARN', 'Falha ao recuperar astrologo-config de BIGDATA_DB, usando fallback', { error: String(err) });
+      }
+    }
+
+    // Inicializa a instância do SDK de vanguarda
+    const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+
+    // ==== PASSO 1: Token Counting API (v1beta - best practice) ====
+    structuredLog('INFO', 'Iniciando análise astrológica com Gemini SDK', { prompt_length: prompt.length, model: selectedModel });
     
-    const tokenCount = await estimateTokenCount(prompt, env.GEMINI_API_KEY);
+    const tokenCount = await estimateTokenCount(ai, prompt, selectedModel);
     if (tokenCount > 0) {
       structuredLog('INFO', 'Token count estimado', { tokens: tokenCount, max_allowed: 128000 });
       if (tokenCount > 120000) {
         return new Response(JSON.stringify({ success: false, error: "Dados muito extensos para análise." }), {
           status: 413,
-          headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+          headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
         });
       }
     }
 
-    // ==== PASSO 2: Requisição com retry e configuração otimizada (docs: streaming, maxTokens, improved safety) ====
-    let response: Response | undefined;
+    // ==== PASSO 2: Requisição com retry e configuração otimizada através do SDK ====
     let lastErrorMsg = 'Desconhecido';
+    let generationResult;
     
     for (let t = 0; t < 2; t++) {
       try {
-        response = await fetch(generateContentEndpoint(env.GEMINI_API_KEY), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              thinkingConfig: { thinkingLevel: GEMINI_CONFIG.thinkingLevel },
-              maxOutputTokens: GEMINI_CONFIG.maxOutputTokens, // Limite robusto (docs: importante)
-              temperature: 1.0, // Recomendado para Gemini 3 (docs: evita looping)
-              // topK: 40, // Default (comentado, usar default)
-              // topP: 0.95, // Default (comentado, usar default)
-            },
+        generationResult = await ai.models.generateContent({
+          model: selectedModel,
+          contents: prompt,
+          config: {
+            maxOutputTokens: GEMINI_CONFIG_DEFAULTS.maxOutputTokens, // Limite robusto (docs: importante)
+            temperature: 1.0, // Recomendado para Gemini Flash (docs: evita looping)
             // ==== IMPROVED SAFETY SETTINGS (docs: best practice v1beta) ====
             safetySettings: [
-              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }, // ← MELHORADO (era BLOCK_NONE)
-              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" }, // ← MELHORADO (era BLOCK_NONE)
-              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-              { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_ONLY_HIGH" }, // ← NOVO
+              { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+              { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+              { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+              { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+              { category: HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
             ]
-          })
+          }
         });
+        break; // Sucesso, quebra o loop de retry
       } catch (fetchErr) {
         lastErrorMsg = String(fetchErr);
-        structuredLog('WARN', `Tentativa ${t + 1}/2 falhou na requisição Gemini`, { error: lastErrorMsg });
+        structuredLog('WARN', `Tentativa ${t + 1}/2 falhou na requisição Gemini SDK`, { error: lastErrorMsg });
         if (t === 0) await new Promise(r => setTimeout(r, 800));
         continue;
       }
-      
-      if (!response || !response.ok) {
-        const statusCode = response?.status || 0;
-        const respText = await response?.text() || '';
-        lastErrorMsg = `HTTP ${statusCode}`;
-        structuredLog('WARN', `Tentativa ${t + 1}/2: Resposta não-OK do Gemini`, { status: statusCode, response: respText.substring(0, 200) });
-        if (t === 0) await new Promise(r => setTimeout(r, 800));
-        continue;
-      }
-      
-      break;
     }
-
-    if (!response || !response.ok) {
-      structuredLog('ERROR', 'Falha permanente no Gemini após retry', { lastError: lastErrorMsg });
-      return new Response(JSON.stringify({ success: false, error: "Falha no provedor de IA." }), {
-        status: 502,
-        headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+    
+    if (!generationResult || !generationResult.text) {
+      structuredLog('ERROR', 'Ambas as tentativas falharam ou retornaram status de erro/incompleto', { error: lastErrorMsg });
+      return new Response(JSON.stringify({ success: false, error: "Servidor superlotado (Aviso Oculto #77). Tente novamente." }), {
+        status: 504,
+        headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
       });
     }
 
-    // ==== PASSO 3: Parse response com verificação de thinking parts (docs: thinking models) ====
-    const aiData = await response.json() as GeminiGenerateContentResponse;
-    
-    // Log de uso de tokens (docs: usage_metadata)
-    if (aiData.usageMetadata) {
-      structuredLog('INFO', 'Tokens utilizados na resposta', {
-        prompt_tokens: aiData.usageMetadata.promptTokenCount,
-        cached_tokens: aiData.usageMetadata.cachedContentTokenCount,
-        output_tokens: aiData.usageMetadata.candidatesTokenCount,
-        total_tokens: aiData.usageMetadata.totalTokenCount,
-      });
-    }
+    // ==== PASSO 3: Parse da Resposta e Extração de Tokens Otimizado ====
+    const generatedText = generationResult.text;
+    let analise = sanitizeGeneratedHtml(generatedText);
 
-    const candidates = aiData?.candidates;
-    if (!candidates || candidates.length === 0) {
-      structuredLog('WARN', 'Nenhum candidate na resposta Gemini', { finishReason: candidates?.[0]?.finishReason });
-      return new Response(JSON.stringify({ success: false, error: "Resposta vazia do modelo." }), {
-        status: 502,
-        headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
-      });
-    }
-
-    const content = candidates[0]?.content;
-    const parts = content?.parts;
-    
-    // Filtrar partes visíveis (ignorar thinking parts de modelos thinking; docs: thinking model responses)
-    const visibleParts = (parts || []).filter(p => p.text && !p.thought);
-    let analise = visibleParts.map(p => p.text).join('\n\n') || parts?.[0]?.text || "<p>Perturbação no éter na geração.</p>";
-    
-    analise = sanitizeGeneratedHtml(analise);
     if (!analise || analise.trim().length === 0) {
       analise = "<p>Perturbação no éter na geração.</p>";
     }
+
+    structuredLog('INFO', 'Análise gerada com sucesso via SDK', { 
+      bytesHtml: analise.length,
+      usage: generationResult.usageMetadata
+    });
 
     // ==== PASSO 4: Persistência no banco (D1) ====
     if (env.BIGDATA_DB && id && typeof id === 'string') {
@@ -316,14 +262,14 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
 
     structuredLog('INFO', 'Análise gerada com sucesso', { analise_length: analise.length });
     return new Response(JSON.stringify({ success: true, analise }), { 
-      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } 
+      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders } 
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     structuredLog('ERROR', 'Erro não-tratado na análise astrológica', { error: errorMessage, stack: err instanceof Error ? err.stack : undefined });
     return new Response(JSON.stringify({ success: false, error: "Falha na comunicação Cósmica." }), { 
       status: 500, 
-      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } 
+      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders } 
     });
   }
 }

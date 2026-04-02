@@ -1,10 +1,12 @@
 import { calcExpressionNumber, getJulianDate, getTatwaAtMoment, isValidDateString, isValidTimeString, reduceNum, wrapDegrees, type AstroInfo } from './_shared/astroCore';
-import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, rateLimitHeaders, resolveRateLimitConfig, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
+import { getCorsHeaders, hasDisallowedOrigin, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
 
-interface EnvBindings { GEMINI_API_KEY: string; BIGDATA_DB: D1DatabaseLike; }
+interface EnvBindings { 
+  GEMINI_API_KEY: string; 
+  BIGDATA_DB: D1DatabaseLike; 
+  GLOBAL_RATE_LIMITER: { limit: (options: { key: string }) => Promise<{ success: boolean }> };
+}
 interface Context { request: Request; env: EnvBindings; }
-
-const RATE_LIMIT = { route: 'astrologo/calcular', limit: 10, windowMs: 10 * 60 * 1000 };
 
 const parseIsoTime = (value: string | undefined, fallbackH: number, fallbackM: number): [number, number] => {
     if (!value) return [fallbackH, fallbackM];
@@ -28,18 +30,19 @@ export async function onRequestPost(context: Context) {
         });
     }
 
-    const activeRateLimit = await resolveRateLimitConfig(env.BIGDATA_DB, RATE_LIMIT);
+    const ipForRatelimit = request.headers.get("CF-Connecting-IP") || "unknown";
+    
+    // Utilização nativa do Cloudflare Rate Limiter Binding via wrangler.json `GLOBAL_RATE_LIMITER`
+    let rateLimitAllowed = true;
+    if (env.GLOBAL_RATE_LIMITER) {
+      const { success } = await env.GLOBAL_RATE_LIMITER.limit({ key: `astrologo/calcular:${ipForRatelimit}` });
+      rateLimitAllowed = success;
+    }
 
-    const rateLimit = activeRateLimit.enabled
-        ? await enforceRateLimit(env.BIGDATA_DB, request, activeRateLimit)
-        : { allowed: true, limit: activeRateLimit.limit, remaining: activeRateLimit.limit, resetAt: Date.now() + activeRateLimit.windowMs };
-
-    const limitHeaders = rateLimitHeaders(rateLimit);
-
-    if (!rateLimit.allowed) {
+    if (!rateLimitAllowed) {
         return new Response(JSON.stringify({ success: false, error: "Muitas consultas em pouco tempo. Aguarde um pouco antes de tentar novamente." }), {
             status: 429,
-            headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+            headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
         });
     }
 
@@ -51,16 +54,16 @@ export async function onRequestPost(context: Context) {
         const localNascimento = String(payload.localNascimento ?? '').trim();
 
         if (!nome || nome.length < 2 || nome.length > 120) {
-            return new Response(JSON.stringify({ success: false, error: "Nome inválido." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
+            return new Response(JSON.stringify({ success: false, error: "Nome inválido." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders } });
         }
         if (!isValidDateString(dataNascimento)) {
-            return new Response(JSON.stringify({ success: false, error: "Data de nascimento inválida." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
+            return new Response(JSON.stringify({ success: false, error: "Data de nascimento inválida." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders } });
         }
         if (!isValidTimeString(horaNascimento)) {
-            return new Response(JSON.stringify({ success: false, error: "Hora de nascimento inválida." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
+            return new Response(JSON.stringify({ success: false, error: "Hora de nascimento inválida." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders } });
         }
         if (!localNascimento || localNascimento.length < 2 || localNascimento.length > 160) {
-            return new Response(JSON.stringify({ success: false, error: "Local de nascimento inválido." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
+            return new Response(JSON.stringify({ success: false, error: "Local de nascimento inválido." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders } });
         }
 
         const tz = -3;
@@ -232,9 +235,9 @@ export async function onRequestPost(context: Context) {
             }
         } catch { console.error("Falha ao gravar no BD."); }
 
-        return new Response(JSON.stringify({ success: true, id: idUnico, dadosGlobais, dadosAstronomica, dadosTropical, query: { nome, dataNascimento, horaNascimento, localNascimento } }), { headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
+        return new Response(JSON.stringify({ success: true, id: idUnico, dadosGlobais, dadosAstronomica, dadosTropical, query: { nome, dataNascimento, horaNascimento, localNascimento } }), { headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders } });
 
     } catch (error) {
-        return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders } });
+        return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders } });
     }
 }

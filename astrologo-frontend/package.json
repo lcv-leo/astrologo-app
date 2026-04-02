@@ -1,7 +1,7 @@
 {
   "name": "astrologo-frontend",
   "private": true,
-  "version": "2.17.1",
+  "version": "2.17.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/genai": "^1.48.0",
     "@tailwindcss/vite": "^4.2.2",
     "dompurify": "^3.3.3",
     "lucide-react": "^1.7.0",

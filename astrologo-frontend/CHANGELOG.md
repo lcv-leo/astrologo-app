@@ -1,5 +1,12 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.07] - 2026-04-01
+### Adicionado
+- **Configuração de IA Dinâmica (Paridade D1)**: Função serverless `analisar.ts` agora consome a configuração `astrologo-config` nativamente a partir da tabela `admin_config_store` (`BIGDATA_DB`), obedecendo ao que for definido no Admin App, com fallback seguro para \`gemini-2.5-flash\`. O hardcode de modelos (ex: \`gemini-pro-latest\`) foi permanentemente abolido.
+
+### Controle de versão
+- `astrologo-app`: APP v02.17.06 → APP v02.17.07
+
 ## [v02.17.06] - 2026-03-31
 ### Corrigido
 - **Compliance - docs legais locais em runtime**: o `LicencasModule` passou a carregar `LICENSE`, `NOTICE` e `THIRDPARTY` a partir de `public/legal/*` via `BASE_URL`, eliminando dependência de `raw.githubusercontent.com` no browser e removendo os 404 recorrentes em produção.
