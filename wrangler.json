@@ -1,0 +1,12 @@
+{
+  "name": "astrologo-app",
+  "compatibility_date": "2026-03-24",
+  "pages_build_output_dir": "dist",
+  "d1_databases": [
+    {
+      "binding": "BIGDATA_DB",
+      "database_name": "bigdata_db",
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ]
+}
