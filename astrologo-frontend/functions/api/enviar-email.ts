@@ -1,9 +1,7 @@
-import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, rateLimitHeaders, resolveRateLimitConfig, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
+import { getCorsHeaders, hasDisallowedOrigin, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
 
 interface EnvBindings { RESEND_API_KEY: string; BIGDATA_DB: D1DatabaseLike; }
 interface Context { request: Request; env: EnvBindings; }
-
-const RATE_LIMIT = { route: 'astrologo/enviar-email', limit: 4, windowMs: 60 * 60 * 1000 };
 
 const isValidEmail = (value: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
@@ -22,21 +20,6 @@ export async function onRequestPost(context: Context) {
         });
     }
 
-    const activeRateLimit = await resolveRateLimitConfig(env.BIGDATA_DB, RATE_LIMIT);
-
-    const rateLimit = activeRateLimit.enabled
-        ? await enforceRateLimit(env.BIGDATA_DB, request, activeRateLimit)
-        : { allowed: true, limit: activeRateLimit.limit, remaining: activeRateLimit.limit, resetAt: Date.now() + activeRateLimit.windowMs };
-
-    const limitHeaders = rateLimitHeaders(rateLimit);
-
-    if (!rateLimit.allowed) {
-        return new Response(JSON.stringify({ success: false, error: "Limite de envios atingido temporariamente. Aguarde antes de tentar novamente." }), {
-            status: 429,
-            headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
-        });
-    }
-
     try {
         const payload = await request.json() as Record<string, string>;
         const emailDestino = String(payload.emailDestino ?? '').trim();
@@ -47,18 +30,18 @@ export async function onRequestPost(context: Context) {
 
         if (!isValidEmail(emailDestino)) {
             return new Response(JSON.stringify({ success: false, error: "E-mail de destino inválido." }), {
-                status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+                status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
             });
         }
         if (!relatorioHtml && !relatorioTexto) {
             return new Response(JSON.stringify({ success: false, error: "Relatório vazio." }), {
-                status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+                status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
             });
         }
 
         if (!RESEND_API_KEY) {
             return new Response(JSON.stringify({ success: false, error: "Chave do Resend não encontrada." }), {
-                status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+                status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
             });
         }
 
@@ -81,16 +64,16 @@ export async function onRequestPost(context: Context) {
 
         if (res.ok) {
             return new Response(JSON.stringify({ success: true, message: "E-mail enviado com sucesso!" }), {
-                headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+                headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
             });
         } else {
             return new Response(JSON.stringify({ success: false, error: String(data.message) }), {
-                status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+                status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
             });
         }
     } catch {
         return new Response(JSON.stringify({ success: false, error: "Falha interna na comunicação do e-mail." }), {
-            status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders, ...limitHeaders }
+            status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
         });
     }
 }
