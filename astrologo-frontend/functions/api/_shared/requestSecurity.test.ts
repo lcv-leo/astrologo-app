@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { enforceRateLimit, getClientIp, getCorsHeaders, hasDisallowedOrigin, isAllowedLcvOrigin, rateLimitHeaders, type D1DatabaseLike } from './requestSecurity';
+import { getClientIp, getCorsHeaders, hasDisallowedOrigin, isAllowedLcvOrigin } from './requestSecurity';
 
 const createRequest = (origin?: string, extraHeaders: Record<string, string> = {}) => {
   const headers = new Headers(extraHeaders);
@@ -38,51 +38,5 @@ describe('requestSecurity', () => {
     expect(getClientIp(createRequest(undefined, { 'X-Forwarded-For': '5.6.7.8, 9.9.9.9' }))).toBe('5.6.7.8');
   });
 
-  it('inclui cabeçalhos de rate limit', () => {
-    const headers = rateLimitHeaders({ allowed: true, limit: 10, remaining: 8, resetAt: 1710000000000 });
-    expect(headers['X-RateLimit-Limit']).toBe('10');
-    expect(headers['X-RateLimit-Remaining']).toBe('8');
-  });
-
-  it('aplica rate limit por janela', async () => {
-    const state = new Map<string, { request_count: number; window_start: number }>();
-    vi.spyOn(Date, 'now').mockReturnValue(1710000000000);
-
-    const db = {
-      prepare: (query: string) => ({
-        bind: (...args: unknown[]) => ({
-          first: async () => {
-            if (!query.startsWith('SELECT')) return null;
-            return state.get(String(args[0])) ?? null;
-          },
-          run: async () => {
-            if (query.startsWith('INSERT OR REPLACE')) {
-              state.set(String(args[0]), { request_count: 1, window_start: Number(args[2]) });
-            } else if (query.startsWith('UPDATE')) {
-              const key = String(args[1]);
-              const current = state.get(key);
-              if (current) {
-                state.set(key, { ...current, request_count: Number(args[0]) });
-              }
-            }
-            return {};
-          }
-        })
-      })
-    } as unknown as D1DatabaseLike;
-
-    const request = createRequest('https://mapa-astral.lcv.app.br', {
-      'CF-Connecting-IP': '10.0.0.1',
-      'User-Agent': 'Vitest'
-    });
-
-    const first = await enforceRateLimit(db, request, { route: 'calcular', limit: 2, windowMs: 60_000 });
-    const second = await enforceRateLimit(db, request, { route: 'calcular', limit: 2, windowMs: 60_000 });
-    const third = await enforceRateLimit(db, request, { route: 'calcular', limit: 2, windowMs: 60_000 });
-
-    expect(first.allowed).toBe(true);
-    expect(second.allowed).toBe(true);
-    expect(third.allowed).toBe(false);
-    expect(third.retryAfter).toBeGreaterThan(0);
-  });
+  // enforceRateLimit and generic rate-limiting logic was moved out to Cloudflare WAF
 });
