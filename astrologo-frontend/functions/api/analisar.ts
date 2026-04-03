@@ -8,6 +8,7 @@ import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai';
 // ==== TYPES PARA GOOGLE GEMINI API v1beta ====
 interface EnvBindings { 
   GEMINI_API_KEY: string; 
+  CF_AI_GATEWAY: string;
   BIGDATA_DB: D1DatabaseLike; 
   GLOBAL_RATE_LIMITER: { limit: (options: { key: string }) => Promise<{ success: boolean }> };
 }
@@ -30,7 +31,7 @@ function structuredLog(level: 'INFO' | 'WARN' | 'ERROR', message: string, contex
 
 // Configuração de modelo e valores de geração otimizados (Gemini v1beta)
 const GEMINI_CONFIG_DEFAULTS = {
-  model: 'gemini-2.5-flash', // Fallback dinâmico padrão
+  model: '', // Fallback dinâmico padrão
   apiVersion: 'v1beta',
   maxOutputTokens: 8192, // Limite robusto de output (docs: importante para controle de custo)
   cachedContentTTL: '3600s', // 1h cache de contexto (docs: reduz custo de prompt repetido)
@@ -160,8 +161,13 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
       }
     }
 
-    // Inicializa a instância do SDK de vanguarda
-    const ai = new GoogleGenAI({ baseUrl: 'https://gateway.ai.cloudflare.com/v1/d65b76a0e64c3791e932edd9163b1c71/workspace-gateway/google-ai-studio', apiKey: env.GEMINI_API_KEY });
+    // Inicializa a instância do SDK de vanguarda com Cloudflare AI Gateway
+    const ai = new GoogleGenAI({ 
+      apiKey: env.GEMINI_API_KEY,
+      httpOptions: {
+        baseUrl: env.CF_AI_GATEWAY || 'https://gateway.ai.cloudflare.com/v1/d65b76a0e64c3791e932edd9163b1c71/workspace-gateway/google-ai-studio', 
+      }
+    });
 
     // ==== PASSO 1: Token Counting API (v1beta - best practice) ====
     structuredLog('INFO', 'Iniciando análise astrológica com Gemini SDK', { prompt_length: prompt.length, model: selectedModel });
