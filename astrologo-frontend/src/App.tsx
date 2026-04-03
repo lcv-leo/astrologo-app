@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 // Módulo: astrologo-frontend/src/App.tsx
-// Versão: v02.17.02
+// Versão: v02.17.03
 // Descrição: Frontend principal do Oráculo Celestial com análise astrológica via Gemini.
 
 import React, { useState, useEffect, useRef } from 'react';
