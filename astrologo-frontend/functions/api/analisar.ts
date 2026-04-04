@@ -160,8 +160,10 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
     }
 
     // Inicializa a instância do SDK de vanguarda
+    const envRec = env as unknown as Record<string, unknown>;
+    const apiKeyRaw = env.GEMINI_API_KEY || envRec['gemini-api-key'];
     const ai = new GoogleGenAI({ 
-      apiKey: env.GEMINI_API_KEY
+      apiKey: apiKeyRaw && typeof apiKeyRaw === 'object' && 'get' in apiKeyRaw ? await (apiKeyRaw as { get(): Promise<string> }).get() : String(apiKeyRaw || '')
     });
 
     // ==== PASSO 1: Token Counting API (v1beta - best practice) ====
