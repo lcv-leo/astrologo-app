@@ -27,7 +27,7 @@ export async function onRequestPost(context: Context) {
         const relatorioTexto = String(payload.relatorioTexto ?? '');
         const nomeConsulente = String(payload.nomeConsulente ?? '').trim();
         const envRec = env as unknown as Record<string, unknown>;
-        const RESEND_API_KEY = env.RESEND_API_KEY || envRec['resend-api-key'] || envRec['resend-appkey'] || envRec['RESEND_APPKEY'];
+        const RESEND_API_KEY = (env.RESEND_API_KEY || envRec['RESEND_APP_KEY'] || envRec['RESEND_APPKEY'] || envRec['resend-api-key'] || envRec['resend-appkey'] || envRec['RESEND_APPKEY']) as string;
 
         if (!isValidEmail(emailDestino)) {
             return new Response(JSON.stringify({ success: false, error: "E-mail de destino inválido." }), {

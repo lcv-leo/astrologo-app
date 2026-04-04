@@ -25,7 +25,8 @@ export async function onRequestPost(context: Context) {
     return getCorsResponse(request, { ok: false, error: 'Origem não permitida.' }, 403);
   }
 
-  const apiKey = env?.RESEND_API_KEY;
+  const envRec = env as unknown as Record<string, unknown>;
+  const apiKey = (env?.RESEND_API_KEY || envRec['RESEND_APP_KEY'] || envRec['RESEND_APPKEY'] || envRec['resend-api-key'] || envRec['resend-appkey']) as string;
   if (!apiKey) return getCorsResponse(request, { ok: false, error: 'RESEND_API_KEY não configurada.' }, 503);
 
   try {
