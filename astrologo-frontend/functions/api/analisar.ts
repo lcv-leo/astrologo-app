@@ -29,7 +29,7 @@ function structuredLog(level: 'INFO' | 'WARN' | 'ERROR', message: string, contex
 
 // Configuração de modelo e valores de geração otimizados (Gemini v1beta)
 const GEMINI_CONFIG_DEFAULTS = {
-  model: '', // Fallback dinâmico padrão
+  model: 'gemini-pro-latest', // Fallback caso configuração do D1 atrase
   apiVersion: 'v1beta',
   maxOutputTokens: 8192, // Limite robusto de output (docs: importante para controle de custo)
   cachedContentTTL: '3600s', // 1h cache de contexto (docs: reduz custo de prompt repetido)

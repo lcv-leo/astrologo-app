@@ -1,8 +1,18 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.09] - 2026-04-04
+### Resolvido
+- **Infraestrutura IA**: Restabelecimento da comunicação das chamadas e análises cósmicas solucionando o erro 500 do backend ao adotar hardcode literal 'gemini-pro-latest' como fallback model, impedindo payload strings vazias.
+- **Cloudflare Environment**: Sincronização e injeção do binding `RESEND_API_KEY` mapeado via Secrets Store nativo.
+
 ## [v02.17.08] - 2026-04-02
 ### Controle de versão
 - `astrologo-app`: APP v02.17.07 → APP v02.17.08
+
+## [v02.17.09] - 2026-04-04
+### Resolvido
+- **Infraestrutura IA**: Restabelecimento da comunicação das chamadas e análises cósmicas solucionando o erro 500 do backend ao adotar hardcode literal 'gemini-pro-latest' como fallback model, impedindo payload strings vazias.
+- **Cloudflare Environment**: Sincronização e injeção do binding `RESEND_API_KEY` mapeado via Secrets Store nativo.
 
 ## [v02.17.07] - 2026-04-01
 ### Adicionado
@@ -11,6 +21,11 @@
 ### Controle de versão
 - `astrologo-app`: APP v02.17.06 → APP v02.17.07
 
+## [v02.17.09] - 2026-04-04
+### Resolvido
+- **Infraestrutura IA**: Restabelecimento da comunicação das chamadas e análises cósmicas solucionando o erro 500 do backend ao adotar hardcode literal 'gemini-pro-latest' como fallback model, impedindo payload strings vazias.
+- **Cloudflare Environment**: Sincronização e injeção do binding `RESEND_API_KEY` mapeado via Secrets Store nativo.
+
 ## [v02.17.06] - 2026-03-31
 ### Corrigido
 - **Compliance - docs legais locais em runtime**: o `LicencasModule` passou a carregar `LICENSE`, `NOTICE` e `THIRDPARTY` a partir de `public/legal/*` via `BASE_URL`, eliminando dependência de `raw.githubusercontent.com` no browser e removendo os 404 recorrentes em produção.
@@ -18,12 +33,22 @@
 ### Controle de versão
 - `astrologo-app`: APP v02.17.05 → APP v02.17.06
 
+## [v02.17.09] - 2026-04-04
+### Resolvido
+- **Infraestrutura IA**: Restabelecimento da comunicação das chamadas e análises cósmicas solucionando o erro 500 do backend ao adotar hardcode literal 'gemini-pro-latest' como fallback model, impedindo payload strings vazias.
+- **Cloudflare Environment**: Sincronização e injeção do binding `RESEND_API_KEY` mapeado via Secrets Store nativo.
+
 ## [v02.17.05] - 2026-03-31
 ### Adicionado
 - **Governança de Licenciamento (GNU AGPLv3)**: Inserção do `LicencasModule` e `ComplianceBanner` no frontend para fechamento do SaaS Loophole com conformidade total.
 
 ### Controle de versão
 - `astrologo-app`: APP v02.17.04 -> APP v02.17.05
+
+## [v02.17.09] - 2026-04-04
+### Resolvido
+- **Infraestrutura IA**: Restabelecimento da comunicação das chamadas e análises cósmicas solucionando o erro 500 do backend ao adotar hardcode literal 'gemini-pro-latest' como fallback model, impedindo payload strings vazias.
+- **Cloudflare Environment**: Sincronização e injeção do binding `RESEND_API_KEY` mapeado via Secrets Store nativo.
 
 ## [v02.17.04] - 2026-03-31
 ### Corrigido
@@ -87,3 +112,4 @@
 ## [v02.13.00] — Anterior
 ### Histórico
 - Versão anterior à padronização do controle de versão
+
