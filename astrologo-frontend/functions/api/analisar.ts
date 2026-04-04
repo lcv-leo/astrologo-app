@@ -5,10 +5,8 @@
 import { getCorsHeaders, hasDisallowedOrigin, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
 import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai';
 
-// ==== TYPES PARA GOOGLE GEMINI API v1beta ====
 interface EnvBindings { 
   GEMINI_API_KEY: string; 
-  CF_AI_GATEWAY: string;
   BIGDATA_DB: D1DatabaseLike; 
   GLOBAL_RATE_LIMITER: { limit: (options: { key: string }) => Promise<{ success: boolean }> };
 }
@@ -161,12 +159,9 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
       }
     }
 
-    // Inicializa a instância do SDK de vanguarda com Cloudflare AI Gateway
+    // Inicializa a instância do SDK de vanguarda
     const ai = new GoogleGenAI({ 
-      apiKey: env.GEMINI_API_KEY,
-      httpOptions: {
-        baseUrl: env.CF_AI_GATEWAY || 'https://gateway.ai.cloudflare.com/v1/d65b76a0e64c3791e932edd9163b1c71/workspace-gateway/google-ai-studio', 
-      }
+      apiKey: env.GEMINI_API_KEY
     });
 
     // ==== PASSO 1: Token Counting API (v1beta - best practice) ====
