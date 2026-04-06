@@ -1,5 +1,18 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.10] - 2026-04-06
+### Corrigido
+- **Renderização HTML da Síntese (IA)**: Root cause identificado e corrigido em `sanitizeGeneratedHtml()` no backend `analisar.ts`. A função chamava `escapeHtml()` no conteúdo HTML retornado pelo Gemini, convertendo `<p>`, `<strong>` etc. em `&lt;p&gt;`, `&lt;strong&gt;` — exibindo tags cruas como texto visível ao invés de elementos formatados. Substituído por sanitizador baseado em whitelist de tags (`p`, `strong`, `ul`, `li`, `em`, `b`, `i`, `h1`-`h3`, `br`) com suporte a `style` para `text-align`/`text-indent`.
+- **Frontend DOMPurify — style attributes**: Adicionado `'style'` ao `ALLOWED_ATTR` do `sanitizeRichHtml` em `App.tsx`, permitindo que estilos de alinhamento gerados pelo Gemini sobrevivam à sanitização no browser.
+- **Persistência de análise IA nos dados de usuário**: O fluxo de salvamento na nuvem ("Salvar na Nuvem") agora inclui `analiseIa` no objeto de mapa salvo (`{ ...result, analiseIa }`), corrigindo a ausência da Síntese do Mestre (IA) na aba "Dados de Usuários" do admin-app.
+- **Migração D1 — dados históricos**: Executada migração em produção para reverter `&lt;`, `&gt;`, `&amp;`, `&quot;`, `&#39;` em 2 registros existentes na tabela `astrologo_mapas.analise_ia` e limpar tags `<p>` duplicadas residuais do algoritmo anterior.
+
+### Removido
+- Função `escapeHtml()` obsoleta removida de `analisar.ts` (sem uso após refatoração).
+
+### Controle de versão
+- `astrologo-app`: APP v02.17.09 → APP v02.17.10
+
 ## [v02.17.09] - 2026-04-04
 ### Resolvido
 - **Infraestrutura IA**: Restabelecimento da comunicação das chamadas e análises cósmicas solucionando o erro 500 do backend ao adotar hardcode literal 'gemini-pro-latest' como fallback model, impedindo payload strings vazias.

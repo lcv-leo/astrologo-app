@@ -1,5 +1,19 @@
 # AI Memory Log - astrologo-app
 
+## 2026-04-06 — Astrologo Frontend: HTML Rendering & IA Save Persistence Fix
+### Escopo
+Resolução da regressão de renderização onde a "Síntese do Mestre (IA)" exibia tags HTML cruas como texto visível, e correção da perda de dados de análise IA ao salvar mapas na nuvem.
+
+### Corrigido
+- **Backend `sanitizeGeneratedHtml()` (analisar.ts)**: Root cause identificado — a função chamava `escapeHtml()` no output HTML do Gemini, convertendo `<p>`, `<strong>` em `&lt;p&gt;`, `&lt;strong&gt;`. Substituído por sanitizador baseado em whitelist de tags (`p`, `strong`, `ul`, `li`, `em`, `b`, `i`, `h1`-`h3`, `br`) com preservação de atributos `style` seguros (`text-align`, `text-indent`).
+- **Frontend DOMPurify (App.tsx)**: `ALLOWED_ATTR: []` → `ALLOWED_ATTR: ['style']` para preservar estilos de alinhamento.
+- **Save flow (App.tsx)**: `analiseIa` era uma variável de estado separada e nunca era mesclada no `result` ao salvar na nuvem. Agora o fluxo faz `{ ...result, analiseIa }` antes de persistir, garantindo que a análise IA apareça na aba "Dados de Usuários" do admin-app.
+- **Admin-app `AstrologoModule.tsx`**: `ALLOWED_ATTR: ['style']` para paridade de renderização.
+- **Migração D1**: Revertidas entidades HTML escapadas em 2 registros históricos na coluna `astrologo_mapas.analise_ia` e limpos `<p><p` duplicados residuais.
+
+### Controle de versão
+- `astrologo-app`: APP v02.17.09 → APP v02.17.10
+- `admin-app`: APP v01.77.43 → APP v01.77.44
 
 ## 2026-04-03 — Cloudflare Paid Scale Integration
 ### Escopo

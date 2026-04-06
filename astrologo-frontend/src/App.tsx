@@ -12,7 +12,7 @@ import { useNotification } from './components/Notification';
 import { ComplianceBanner } from './components/ComplianceBanner';
 import { LicencasModule } from './modules/compliance/LicencasModule';
 import DOMPurify from 'dompurify';
-const APP_VERSION = 'APP v02.17.09';
+const APP_VERSION = 'APP v02.17.10';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
