@@ -35,13 +35,7 @@ const GEMINI_CONFIG_DEFAULTS = {
   cachedContentTTL: '3600s', // 1h cache de contexto (docs: reduz custo de prompt repetido)
 };
 
-const escapeHtml = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+
 
 const sanitizeGeneratedHtml = (input: string): string => {
   const normalized = input
@@ -55,11 +49,29 @@ const sanitizeGeneratedHtml = (input: string): string => {
     return '<p>Perturbação no éter na geração.</p>';
   }
 
-  const escaped = escapeHtml(normalized);
-  return escaped
-    .split(/\n{2,}/)
-    .map((block) => `<p>${block.replace(/\n/g, '<br>')}</p>`)
-    .join('');
+  // Whitelist of allowed HTML tags (matching frontend DOMPurify config + style for alignment)
+  const ALLOWED_TAGS = new Set(['p', 'strong', 'ul', 'li', 'em', 'b', 'i', 'h1', 'h2', 'h3', 'br']);
+  // Allow only safe style properties for text alignment/indent
+  const SAFE_STYLE_RE = /^(?:\s*(?:text-align|text-indent)\s*:\s*[^;"'<>]+;\s*)+$/i;
+
+  // Strip disallowed tags but keep their text content; preserve allowed tags
+  const sanitized = normalized.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>/g, (match, tagName: string, attrs: string) => {
+    const tag = tagName.toLowerCase();
+    if (!ALLOWED_TAGS.has(tag)) {
+      return ''; // Strip disallowed tags entirely
+    }
+    // For allowed tags, only keep safe style attribute
+    const isClosing = match.startsWith('</');
+    if (isClosing) return `</${tag}>`;
+    // Parse style attribute if present
+    const styleMatch = attrs.match(/style\s*=\s*"([^"]*)"/i);
+    if (styleMatch && SAFE_STYLE_RE.test(styleMatch[1])) {
+      return `<${tag} style="${styleMatch[1]}">`;
+    }
+    return `<${tag}>`;
+  });
+
+  return sanitized;
 };
 
 /**

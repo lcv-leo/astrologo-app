@@ -27,7 +27,7 @@ const formatPhone = (val: string) => {
 };
 const sanitizeRichHtml = (html: string): string => DOMPurify.sanitize(html, {
   ALLOWED_TAGS: ['p', 'strong', 'ul', 'li', 'em', 'b', 'i', 'h1', 'h2', 'h3', 'br'],
-  ALLOWED_ATTR: []
+  ALLOWED_ATTR: ['style']
 });
 
 const htmlToPlainText = (html: string): string => {
