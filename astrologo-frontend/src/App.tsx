@@ -517,7 +517,11 @@ export default function App() {
       const action = authMode === 'save' ? 'save' : authMode === 'delete' ? 'request-delete-token' : 'request-token';
       const body: Record<string, unknown> = { action, email: authEmail };
       if (authMode === 'save') {
-        const novosMapas = result ? [result, ...mapasSalvos.filter(m => m.id !== result.id)] : mapasSalvos;
+        // Merge analiseIa into the result before saving so the AI analysis persists
+        const resultWithAnalise = result ? { ...result, analiseIa } : null;
+        const novosMapas = resultWithAnalise
+          ? [resultWithAnalise, ...mapasSalvos.filter(m => m.id !== result!.id)]
+          : mapasSalvos;
         body.dados = { mapasSalvos: novosMapas };
       }
 
