@@ -606,7 +606,7 @@ export default function App() {
             <div className="p-4 bg-white/60 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white mb-6"><Compass className="w-12 h-12 md:w-16 md:h-16 text-blue-600" /></div>
             {/* H1 PRINCIPAL MANTÉM A REDUÇÃO DRÁSTICA */}
             <h1 className="w-full text-center font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600 mb-3 uppercase text-[clamp(10px,2vw,24px)] text-balance">MAPEAMENTO ASTROLÓGICO</h1>
-            <p className="text-slate-600 text-sm md:text-lg font-medium tracking-wide text-balance">Investigue as Influências Astrológicas <span className="text-slate-400 text-[10px] md:text-sm font-normal">Olhe as Estrelas</span></p>
+            <p className="text-slate-600 text-sm md:text-lg font-medium tracking-wide text-balance">Investigue as Influências Astrológicas <span className="text-slate-400 text-[10px] md:text-sm font-normal">(Olhe as Estrelas)</span></p>
           </header>
 
           <form onSubmit={calcularMapa} autoComplete="on" className={`md3-glass bg-white/60 backdrop-blur-2xl p-6 md:p-10 rounded-[2.5rem] border border-white shadow-[0_8px_32px_rgba(0,0,0,0.08)] w-full grid md:grid-cols-2 gap-5 md:gap-8 max-w-4xl ${result ? 'mb-8' : ''}`}>
