@@ -1,5 +1,13 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.11] - 2026-04-06
+### Adicionado
+- **Cross-Service AI Telemetry**: Implementação de `logAiUsage` em `analisar.ts` para registro de tokens, latência e status no `ai_usage_logs` (D1).
+### Alterado
+- **Compatibility Date**: `wrangler.json` atualizados para `2026-04-06`.
+### Controle de versão
+- `astrologo-app`: APP v02.17.10 → APP v02.17.11
+
 ## [v02.17.10] - 2026-04-06
 ### Corrigido
 - **Renderização HTML da Síntese (IA)**: Root cause identificado e corrigido em `sanitizeGeneratedHtml()` no backend `analisar.ts`. A função chamava `escapeHtml()` no conteúdo HTML retornado pelo Gemini, convertendo `<p>`, `<strong>` etc. em `&lt;p&gt;`, `&lt;strong&gt;` — exibindo tags cruas como texto visível ao invés de elementos formatados. Substituído por sanitizador baseado em whitelist de tags (`p`, `strong`, `ul`, `li`, `em`, `b`, `i`, `h1`-`h3`, `br`) com suporte a `style` para `text-align`/`text-indent`.

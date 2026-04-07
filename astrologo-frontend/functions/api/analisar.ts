@@ -27,6 +27,37 @@ function structuredLog(level: 'INFO' | 'WARN' | 'ERROR', message: string, contex
   console.log(JSON.stringify(logEntry));
 }
 
+// ── Telemetria: registra uso de AI no BIGDATA_DB ──
+function logAiUsage(
+  db: D1DatabaseLike | undefined,
+  entry: { module: string; model: string; input_tokens: number; output_tokens: number; latency_ms: number; status: string; error_detail?: string },
+) {
+  if (!db || typeof db.prepare !== 'function') return;
+  (async () => {
+    try {
+      await (db.prepare(`
+        CREATE TABLE IF NOT EXISTS ai_usage_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+          module TEXT NOT NULL, model TEXT NOT NULL, input_tokens INTEGER DEFAULT 0,
+          output_tokens INTEGER DEFAULT 0, latency_ms INTEGER DEFAULT 0,
+          status TEXT DEFAULT 'ok', error_detail TEXT
+        )
+      `) as { run(): Promise<unknown> }).run();
+      await db.prepare(`
+        INSERT INTO ai_usage_logs (module, model, input_tokens, output_tokens, latency_ms, status, error_detail)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        entry.module, entry.model,
+        entry.input_tokens, entry.output_tokens,
+        entry.latency_ms, entry.status,
+        entry.error_detail || null,
+      ).run();
+    } catch (err) {
+      console.warn('[telemetry] ai_usage_logs INSERT failed:', err instanceof Error ? err.message : err);
+    }
+  })();
+}
+
 // Configuração de modelo e valores de geração otimizados (Gemini v1beta)
 const GEMINI_CONFIG_DEFAULTS = {
   model: 'gemini-pro-latest', // Fallback caso configuração do D1 atrase
@@ -125,6 +156,7 @@ export async function onRequestPost(context: Context) {
   }
 
   try {
+    const _telStart = Date.now();
     const payload = await request.json() as Record<string, unknown>;
     const { id, dadosAstronomica, dadosTropical, dadosGlobais, query } = payload;
 
@@ -225,6 +257,7 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
     
     if (!generationResult || !generationResult.text) {
       structuredLog('ERROR', 'Ambas as tentativas falharam ou retornaram status de erro/incompleto', { error: lastErrorMsg });
+      void logAiUsage(env.BIGDATA_DB, { module: 'astrologo-analisar', model: selectedModel, input_tokens: 0, output_tokens: 0, latency_ms: Date.now() - _telStart, status: 'error', error_detail: lastErrorMsg.slice(0, 200) });
       return new Response(JSON.stringify({ success: false, error: "Servidor superlotado (Aviso Oculto #77). Tente novamente." }), {
         status: 504,
         headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
@@ -242,6 +275,15 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
     structuredLog('INFO', 'Análise gerada com sucesso via SDK', { 
       bytesHtml: analise.length,
       usage: generationResult.usageMetadata
+    });
+
+    // Telemetria de sucesso
+    const usage = generationResult.usageMetadata;
+    void logAiUsage(env.BIGDATA_DB, {
+      module: 'astrologo-analisar', model: selectedModel,
+      input_tokens: usage?.promptTokenCount || 0,
+      output_tokens: usage?.candidatesTokenCount || 0,
+      latency_ms: Date.now() - _telStart, status: 'ok'
     });
 
     // ==== PASSO 4: Persistência no banco (D1) ====
