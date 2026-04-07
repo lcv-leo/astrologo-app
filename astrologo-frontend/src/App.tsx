@@ -201,7 +201,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
 
     const divider = '\n' + '─'.repeat(28) + '\n';
 
-    let t = `*🌌 DIAGNÓSTICO ASTROLÓGICO E ESOTÉRICO 🌌*\n\n`;
+    let t = `*🌌 MAPEAMENTO ASTROLÓGICO E ESOTÉRICO 🌌*\n\n`;
     t += `*Consulente:* ${result.query.nome}\n`;
     t += `*Local:* ${result.query.localNascimento}\n`;
     t += `*Nascimento:* ${formatarData(result.query.dataNascimento)} às ${result.query.horaNascimento}\n`;
@@ -217,19 +217,19 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
     t += `  • Vibração da Hora: *${result.dadosGlobais.numerologia.vibracaoHora}*\n`;
 
     const blocoTexto = (dados: DadosSistema) => {
-        let texto = `\n*Astrologia:*\n`;
-        texto += `  • ☀️ Sol: *${dados.astrologia[0].signo}*\n`;
-        texto += `  • ⬆️ Ascendente: *${dados.astrologia[1].signo}*\n`;
-        texto += `  • 🌙 Lua: *${dados.astrologia[2].signo}*\n`;
-        texto += `  • 🔭 Meio do Céu: *${dados.astrologia[3].signo}*\n\n`;
-        texto += `*Umbanda:*\n`;
-        texto += `  • 👑 Coroa (Orixá Ancestral): *${dados.umbanda[0].orixa}*\n`;
-        texto += `  • 🌊 Adjuntó (Orixá de Frente): *${dados.umbanda[1].orixa}*\n`;
-        texto += `  • 🏹 Frente (Orixá de Trabalho): *${dados.umbanda[2].orixa}*\n`;
-        texto += `  • 🌟 Decanato (Regente Secundário): *${dados.umbanda[3].orixa}*\n`;
-        texto += `  • ⏳ Faixa Horária (Regente da Hora): *${dados.umbanda[4].orixa}*\n`;
-        texto += `  • 🪐 ${formatPosicaoLabel(dados.umbanda[5].posicao)}: *${dados.umbanda[5].orixa}*\n`;
-        return texto;
+      let texto = `\n*Astrologia:*\n`;
+      texto += `  • ☀️ Sol: *${dados.astrologia[0].signo}*\n`;
+      texto += `  • ⬆️ Ascendente: *${dados.astrologia[1].signo}*\n`;
+      texto += `  • 🌙 Lua: *${dados.astrologia[2].signo}*\n`;
+      texto += `  • 🔭 Meio do Céu: *${dados.astrologia[3].signo}*\n\n`;
+      texto += `*Umbanda:*\n`;
+      texto += `  • 👑 Coroa (Orixá Ancestral): *${dados.umbanda[0].orixa}*\n`;
+      texto += `  • 🌊 Adjuntó (Orixá de Frente): *${dados.umbanda[1].orixa}*\n`;
+      texto += `  • 🏹 Frente (Orixá de Trabalho): *${dados.umbanda[2].orixa}*\n`;
+      texto += `  • 🌟 Decanato (Regente Secundário): *${dados.umbanda[3].orixa}*\n`;
+      texto += `  • ⏳ Faixa Horária (Regente da Hora): *${dados.umbanda[4].orixa}*\n`;
+      texto += `  • 🪐 ${formatPosicaoLabel(dados.umbanda[5].posicao)}: *${dados.umbanda[5].orixa}*\n`;
+      return texto;
     };
 
     t += divider;
@@ -285,9 +285,9 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
     };
 
     const renderBlocoAstrologicoEmail = (titulo: string, dadosAstrologia: AstroData[], dadosUmbanda: UmbandaData[], isTropical: boolean) => {
-        const titleColor = isTropical ? '#f97316' : '#4338ca';
-        const borderColor = isTropical ? '#fb923c' : '#6366f1';
-        return `
+      const titleColor = isTropical ? '#f97316' : '#4338ca';
+      const borderColor = isTropical ? '#fb923c' : '#6366f1';
+      return `
             <div style="margin-top: 40px; padding-top: 40px; border-top: 1px solid ${borderColor};">
                 <h2 style="font-size: 28px; font-weight: 900; color: ${titleColor}; margin: 0 0 32px 0;">${titulo}</h2>
                 
@@ -328,8 +328,8 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
         <div class="container" style="background-color: #f1f5f9; background-image: radial-gradient(ellipse at top, #e0e7ff 0%, #f1f5f9 50%, #fdf4ff 100%); max-width: 800px; margin: auto; padding: 40px;">
             
             <header style="text-align: center; margin-bottom: 40px;">
-                <h1 style="font-size: 36px; font-weight: 900; letter-spacing: -1px; color: transparent; background-clip: text; -webkit-background-clip: text; background-image: linear-gradient(to right, #3b82f6, #6366f1); margin: 0 0 8px 0;">Diagnóstico Astrológico</h1>
-                <p style="font-size: 18px; color: #475569; margin: 0;">Umbanda Esotérica da Raiz de Guiné</p>
+                <h1 style="font-size: 36px; font-weight: 900; letter-spacing: -1px; color: transparent; background-clip: text; -webkit-background-clip: text; background-image: linear-gradient(to right, #3b82f6, #6366f1); margin: 0 0 8px 0;">Mapeamento Astrológico</h1>
+                <p style="font-size: 18px; color: #475569; margin: 0;">Investigue as Influências Astrológicas</p>
             </header>
 
             <div style="background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 32px; border-radius: 24px; border: 1px solid #ffffff; ${boxShadow} text-align: center; margin-bottom: 40px;">
@@ -486,7 +486,7 @@ export default function App() {
       } else {
         sessionStorage.removeItem('astrologo_session_token');
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   const handleContatoSubmit = async () => {
@@ -549,10 +549,10 @@ export default function App() {
         body: JSON.stringify({ action, email: authEmail, token: authToken })
       });
       const data = await res.json() as { ok: boolean; message?: string; error?: string; dados?: { mapasSalvos?: ResultData[] }; sessionToken?: string };
-      
+
       if (data.ok) {
         if (data.sessionToken) sessionStorage.setItem('astrologo_session_token', data.sessionToken);
-        
+
         if (action === 'verify-delete') {
           sessionStorage.removeItem('astrologo_session_token');
           setMapasSalvos([]);
@@ -601,81 +601,81 @@ export default function App() {
       <InfoModal type={modalType} onClose={() => setModalType(null)} />
 
       {!showLicenses ? (
-      <div className="max-w-6xl mx-auto w-full flex flex-col items-center flex-grow p-3 sm:p-6 md:p-8">
-        <header className="text-center mb-10 md:mb-14 w-full flex flex-col items-center px-2 pt-4">
-          <div className="p-4 bg-white/60 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white mb-6"><Compass className="w-12 h-12 md:w-16 md:h-16 text-blue-600" /></div>
-          {/* H1 PRINCIPAL MANTÉM A REDUÇÃO DRÁSTICA */}
-          <h1 className="w-full text-center font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600 mb-3 uppercase text-[clamp(10px,2vw,24px)] text-balance">DIAGNÓSTICO ASTROLÓGICO</h1>
-          <p className="text-slate-600 text-sm md:text-lg font-medium tracking-wide text-balance">Umbanda Esotérica da Raiz de Guiné <span className="text-slate-400 text-[10px] md:text-sm font-normal">(W. W. da Matta e Silva)</span></p>
-        </header>
+        <div className="max-w-6xl mx-auto w-full flex flex-col items-center flex-grow p-3 sm:p-6 md:p-8">
+          <header className="text-center mb-10 md:mb-14 w-full flex flex-col items-center px-2 pt-4">
+            <div className="p-4 bg-white/60 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white mb-6"><Compass className="w-12 h-12 md:w-16 md:h-16 text-blue-600" /></div>
+            {/* H1 PRINCIPAL MANTÉM A REDUÇÃO DRÁSTICA */}
+            <h1 className="w-full text-center font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600 mb-3 uppercase text-[clamp(10px,2vw,24px)] text-balance">MAPEAMENTO ASTROLÓGICO</h1>
+            <p className="text-slate-600 text-sm md:text-lg font-medium tracking-wide text-balance">Investigue as Influências Astrológicas <span className="text-slate-400 text-[10px] md:text-sm font-normal">Olhe as Estrelas</span></p>
+          </header>
 
-        <form onSubmit={calcularMapa} autoComplete="on" className={`md3-glass bg-white/60 backdrop-blur-2xl p-6 md:p-10 rounded-[2.5rem] border border-white shadow-[0_8px_32px_rgba(0,0,0,0.08)] w-full grid md:grid-cols-2 gap-5 md:gap-8 max-w-4xl ${result ? 'mb-8' : ''}`}>
-          <div className="flex flex-col gap-2 w-full">
-            <label htmlFor="nomeConsulente" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><User className="w-4 h-4 text-blue-500" /> NOME COMPLETO</label>
-            <input id="nomeConsulente" name="name" required type="text" autoComplete="name" aria-label="Nome Completo" title="Nome Completo" placeholder="Ex: João da Silva" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium" value={formData.nome} onChange={e => setFormData({ ...formData, nome: e.target.value })} />
-          </div>
-          <div className="flex flex-col gap-2 w-full">
-            <label htmlFor="localNascimentoInput" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><MapPin className="w-4 h-4 text-blue-500" /> LOCAL DE NASCIMENTO <span className="normal-case text-slate-400 font-medium tracking-normal">(Cidade, Estado)</span></label>
-            <LocationAutocomplete value={formData.localNascimento} onChange={(val) => setFormData({ ...formData, localNascimento: val })} />
-          </div>
-          <div className="flex flex-col gap-2 w-full">
-            <label htmlFor="dataNascimento" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><Calendar className="w-4 h-4 text-blue-500" /> DATA DE NASCIMENTO</label>
-            <input id="dataNascimento" name="birthDate" required type="date" autoComplete="on" aria-label="Data de Nascimento" title="Data de Nascimento" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium [color-scheme:light]" value={formData.dataNascimento} onChange={e => setFormData({ ...formData, dataNascimento: e.target.value })} />
-          </div>
-          <div className="flex flex-col gap-2 w-full">
-            <label htmlFor="horaNascimento" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><Clock className="w-4 h-4 text-blue-500" /> HORÁRIO DE NASCIMENTO <span className="normal-case text-slate-400 font-medium tracking-normal">(HH:mm)</span></label>
-            <input id="horaNascimento" name="birthTime" required type="time" autoComplete="off" aria-label="Horário de Nascimento" title="Horário de Nascimento" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium [color-scheme:light]" value={formData.horaNascimento} onChange={e => setFormData({ ...formData, horaNascimento: e.target.value })} />
-          </div>
-
-          <div className="md:col-span-2 mt-4 flex flex-col md:flex-row gap-4 w-full">
-            <button type="submit" disabled={loading} aria-label="Extrair Arquitetura Sagrada" title="Extrair Arquitetura Sagrada" className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black p-5 rounded-2xl flex justify-center items-center gap-3 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 text-lg uppercase tracking-wider">
-              {loading ? <Sparkles className="animate-spin w-6 h-6" /> : <><Compass className="w-6 h-6" /> Extrair Arquitetura Sagrada</>}
-            </button>
-            {result && (
-              <button type="button" onClick={handleNovaConsulta} aria-label="Realizar Nova Consulta" title="Realizar Nova Consulta" className="flex-1 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 font-bold p-5 rounded-2xl flex justify-center items-center gap-3 transition-all shadow-sm hover:shadow-md text-sm md:text-base uppercase tracking-wider">
-                <RotateCcw className="w-5 h-5" /> Realizar Nova Consulta
-              </button>
-            )}
-          </div>
-        </form>
-
-        {result && <ResultView result={result} analiseIa={analiseIa} onSolicitarAnalise={solicitarAnalise} loadingAi={loadingAi} openInfoModal={setModalType} />}
-
-        {/* Auth Action Buttons */}
-        <div className="w-full max-w-4xl mx-auto flex flex-col sm:flex-row justify-center gap-3 mt-8 animate-in fade-in">
-          <button onClick={() => setAuthMode('save')} type="button" className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-6 rounded-full transition shadow-md sm:flex-1 uppercase tracking-wider text-xs md:text-sm">
-            <Save className="w-4 h-4" /> Salvar na Nuvem
-          </button>
-          <button onClick={() => setAuthMode('retrieve')} type="button" className="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold py-3 px-6 rounded-full transition shadow-sm sm:flex-1 uppercase tracking-wider text-xs md:text-sm">
-            <Download className="w-4 h-4" /> Meus Mapas
-          </button>
-          <button onClick={() => setAuthMode('delete')} type="button" className="flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-3 px-6 rounded-full transition shadow-sm sm:flex-1 uppercase tracking-wider text-xs md:text-sm">
-            <Trash2 className="w-4 h-4" /> Excluir Dados
-          </button>
-        </div>
-
-        {/* Mapas Salvos List */}
-        {mapasSalvos.length > 0 && (
-          <div className="w-full max-w-4xl mx-auto mt-12 mb-8">
-            <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Book className="text-blue-500 w-5 h-5" /> Arquivo Akáshico do Consulente</h3>
-            <div className="grid sm:grid-cols-2 bg-white/60 backdrop-blur-xl p-4 md:p-6 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] gap-4">
-              {mapasSalvos.map((m) => (
-                <div key={m.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-1" onClick={() => { setResult(m); setAnaliseIa(''); window.scrollTo({ top: 300, behavior: 'smooth' }); }}>
-                  <strong className="text-slate-800 truncate block text-base">{m.query.nome}</strong>
-                  <span className="text-xs text-slate-500">{formatarData(m.query.dataNascimento)} às {m.query.horaNascimento}</span>
-                </div>
-              ))}
+          <form onSubmit={calcularMapa} autoComplete="on" className={`md3-glass bg-white/60 backdrop-blur-2xl p-6 md:p-10 rounded-[2.5rem] border border-white shadow-[0_8px_32px_rgba(0,0,0,0.08)] w-full grid md:grid-cols-2 gap-5 md:gap-8 max-w-4xl ${result ? 'mb-8' : ''}`}>
+            <div className="flex flex-col gap-2 w-full">
+              <label htmlFor="nomeConsulente" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><User className="w-4 h-4 text-blue-500" /> NOME COMPLETO</label>
+              <input id="nomeConsulente" name="name" required type="text" autoComplete="name" aria-label="Nome Completo" title="Nome Completo" placeholder="Ex: João da Silva" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium" value={formData.nome} onChange={e => setFormData({ ...formData, nome: e.target.value })} />
             </div>
+            <div className="flex flex-col gap-2 w-full">
+              <label htmlFor="localNascimentoInput" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><MapPin className="w-4 h-4 text-blue-500" /> LOCAL DE NASCIMENTO <span className="normal-case text-slate-400 font-medium tracking-normal">(Cidade, Estado)</span></label>
+              <LocationAutocomplete value={formData.localNascimento} onChange={(val) => setFormData({ ...formData, localNascimento: val })} />
+            </div>
+            <div className="flex flex-col gap-2 w-full">
+              <label htmlFor="dataNascimento" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><Calendar className="w-4 h-4 text-blue-500" /> DATA DE NASCIMENTO</label>
+              <input id="dataNascimento" name="birthDate" required type="date" autoComplete="on" aria-label="Data de Nascimento" title="Data de Nascimento" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium [color-scheme:light]" value={formData.dataNascimento} onChange={e => setFormData({ ...formData, dataNascimento: e.target.value })} />
+            </div>
+            <div className="flex flex-col gap-2 w-full">
+              <label htmlFor="horaNascimento" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><Clock className="w-4 h-4 text-blue-500" /> HORÁRIO DE NASCIMENTO <span className="normal-case text-slate-400 font-medium tracking-normal">(HH:mm)</span></label>
+              <input id="horaNascimento" name="birthTime" required type="time" autoComplete="off" aria-label="Horário de Nascimento" title="Horário de Nascimento" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium [color-scheme:light]" value={formData.horaNascimento} onChange={e => setFormData({ ...formData, horaNascimento: e.target.value })} />
+            </div>
+
+            <div className="md:col-span-2 mt-4 flex flex-col md:flex-row gap-4 w-full">
+              <button type="submit" disabled={loading} aria-label="Extrair Arquitetura Sagrada" title="Extrair Arquitetura Sagrada" className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black p-5 rounded-2xl flex justify-center items-center gap-3 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 text-lg uppercase tracking-wider">
+                {loading ? <Sparkles className="animate-spin w-6 h-6" /> : <><Compass className="w-6 h-6" /> Extrair Arquitetura Sagrada</>}
+              </button>
+              {result && (
+                <button type="button" onClick={handleNovaConsulta} aria-label="Realizar Nova Consulta" title="Realizar Nova Consulta" className="flex-1 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 font-bold p-5 rounded-2xl flex justify-center items-center gap-3 transition-all shadow-sm hover:shadow-md text-sm md:text-base uppercase tracking-wider">
+                  <RotateCcw className="w-5 h-5" /> Realizar Nova Consulta
+                </button>
+              )}
+            </div>
+          </form>
+
+          {result && <ResultView result={result} analiseIa={analiseIa} onSolicitarAnalise={solicitarAnalise} loadingAi={loadingAi} openInfoModal={setModalType} />}
+
+          {/* Auth Action Buttons */}
+          <div className="w-full max-w-4xl mx-auto flex flex-col sm:flex-row justify-center gap-3 mt-8 animate-in fade-in">
+            <button onClick={() => setAuthMode('save')} type="button" className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-6 rounded-full transition shadow-md sm:flex-1 uppercase tracking-wider text-xs md:text-sm">
+              <Save className="w-4 h-4" /> Salvar na Nuvem
+            </button>
+            <button onClick={() => setAuthMode('retrieve')} type="button" className="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold py-3 px-6 rounded-full transition shadow-sm sm:flex-1 uppercase tracking-wider text-xs md:text-sm">
+              <Download className="w-4 h-4" /> Meus Mapas
+            </button>
+            <button onClick={() => setAuthMode('delete')} type="button" className="flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-3 px-6 rounded-full transition shadow-sm sm:flex-1 uppercase tracking-wider text-xs md:text-sm">
+              <Trash2 className="w-4 h-4" /> Excluir Dados
+            </button>
           </div>
-        )}
-      </div>
+
+          {/* Mapas Salvos List */}
+          {mapasSalvos.length > 0 && (
+            <div className="w-full max-w-4xl mx-auto mt-12 mb-8">
+              <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Book className="text-blue-500 w-5 h-5" /> Arquivo Akáshico do Consulente</h3>
+              <div className="grid sm:grid-cols-2 bg-white/60 backdrop-blur-xl p-4 md:p-6 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] gap-4">
+                {mapasSalvos.map((m) => (
+                  <div key={m.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-1" onClick={() => { setResult(m); setAnaliseIa(''); window.scrollTo({ top: 300, behavior: 'smooth' }); }}>
+                    <strong className="text-slate-800 truncate block text-base">{m.query.nome}</strong>
+                    <span className="text-xs text-slate-500">{formatarData(m.query.dataNascimento)} às {m.query.horaNascimento}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       ) : (
         <div className="max-w-6xl mx-auto w-full flex flex-col flex-grow p-3 sm:p-6 md:p-8 mt-10">
           <div className="bg-white/80 backdrop-blur-2xl p-6 md:p-10 rounded-[2.5rem] border border-white shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
             <LicencasModule />
             <div className="flex justify-center mt-8 mb-4">
-              <button 
-                onClick={() => setShowLicenses(false)} 
+              <button
+                onClick={() => setShowLicenses(false)}
                 type="button"
                 className="bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold py-3 px-8 rounded-xl transition shadow-sm uppercase tracking-wider text-sm">
                 Voltar ao Oráculo Celestial

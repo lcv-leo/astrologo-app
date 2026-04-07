@@ -5,9 +5,9 @@
 import { getCorsHeaders, hasDisallowedOrigin, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
 import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai';
 
-interface EnvBindings { 
-  GEMINI_API_KEY: string; 
-  BIGDATA_DB: D1DatabaseLike; 
+interface EnvBindings {
+  GEMINI_API_KEY: string;
+  BIGDATA_DB: D1DatabaseLike;
   GLOBAL_RATE_LIMITER: { limit: (options: { key: string }) => Promise<{ success: boolean }> };
 }
 interface Context { request: Request; env: EnvBindings; }
@@ -138,7 +138,7 @@ export async function onRequestPost(context: Context) {
   }
 
   const ipForRatelimit = request.headers.get("CF-Connecting-IP") || "unknown";
-  
+
   // Utilização nativa do Cloudflare Rate Limiter Binding via wrangler.json `GLOBAL_RATE_LIMITER`
   let rateLimitAllowed = true;
   if (env.GLOBAL_RATE_LIMITER) {
@@ -169,14 +169,14 @@ export async function onRequestPost(context: Context) {
 
     const dadosAnalise = `Sistema Tropical: ${JSON.stringify(dadosTropical)} | Sistema Astronômico Constelacional: ${JSON.stringify(dadosAstronomica)} | Globais (Tatwas e Numerologia): ${JSON.stringify(dadosGlobais)}`;
 
-    const prompt = `Atue como um Mestre Iniciador da Umbanda Esotérica da Raiz de Guiné e Psicanalista Junguiano.
+    const prompt = `Atue como um Mestre Iniciador da Investigue as Influências Astrológicas e Psicanalista Junguiano.
 Dados calculados astrologicamente: ${dadosAnalise} do consulente: ${JSON.stringify(query)}
 
 O aplicativo exibe ao usuário uma jornada narrativa de choque de realidade: PRIMEIRO apresentamos a Astrologia Tropical (12 signos) como a máscara terrena/Ego, e DEPOIS a Astrologia Astronômica Constelacional (13 signos) como a verdade estelar oculta/Alma.
 Siga EXATAMENTE esta mesma ordem! Faça DUAS análises profundas e separadas:
 1º. Astrologia Tropical (A Persona)
 2º. Astrologia Astronômica (A Essência da Alma)
-Integre a Astrologia, a Umbanda Esotérica da Raiz de Guiné de W. W. da Matta e Silva, os Tatwas e a Psicologia Analítica de C. G. Jung. Ao final, efetue uma síntese conjunta comparativa.
+Integre a Astrologia, a Investigue as Influências Astrológicas de W. W. da Matta e Silva, os Tatwas e a Psicologia Analítica de C. G. Jung. Ao final, efetue uma síntese conjunta comparativa.
 
 ATENÇÃO RIGOROSA 1: Analise a influência do "Astro" (o 6º card da Umbanda, que representa a Hora Planetária do minuto exato baseada na Sequência dos Caldeus) e sua sinergia com o Orixá regente.
 ATENÇÃO RIGOROSA 2: Inclua de forma explícita e obrigatória a informação de que a Coroa calculada via data de nascimento serve para revelar a Vibração Original "Teórica/Magnética". Informe claramente que, por necessidades e cobranças cármicas de encarnação, a entidade que atua "de frente" pode pertencer a outra Linha, e que a verdadeira coroa e guias de frente só podem ser atestados de forma inequívoca e prática no terreiro através da "Lei de Pemba" e pelo Mestre de Iniciação.
@@ -206,13 +206,13 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
     // Inicializa a instância do SDK de vanguarda
     const envRec = env as unknown as Record<string, unknown>;
     const apiKeyRaw = env.GEMINI_API_KEY || envRec['GEMINI_APP_KEY'] || envRec['gemini-api-key'] || envRec['gemini-app-key'];
-    const ai = new GoogleGenAI({ 
+    const ai = new GoogleGenAI({
       apiKey: apiKeyRaw && typeof apiKeyRaw === 'object' && 'get' in apiKeyRaw ? await (apiKeyRaw as { get(): Promise<string> }).get() : String(apiKeyRaw || '')
     });
 
     // ==== PASSO 1: Token Counting API (v1beta - best practice) ====
     structuredLog('INFO', 'Iniciando análise astrológica com Gemini SDK', { prompt_length: prompt.length, model: selectedModel });
-    
+
     const tokenCount = await estimateTokenCount(ai, prompt, selectedModel);
     if (tokenCount > 0) {
       structuredLog('INFO', 'Token count estimado', { tokens: tokenCount, max_allowed: 128000 });
@@ -227,7 +227,7 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
     // ==== PASSO 2: Requisição com retry e configuração otimizada através do SDK ====
     let lastErrorMsg = 'Desconhecido';
     let generationResult;
-    
+
     for (let t = 0; t < 2; t++) {
       try {
         generationResult = await ai.models.generateContent({
@@ -254,7 +254,7 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
         continue;
       }
     }
-    
+
     if (!generationResult || !generationResult.text) {
       structuredLog('ERROR', 'Ambas as tentativas falharam ou retornaram status de erro/incompleto', { error: lastErrorMsg });
       void logAiUsage(env.BIGDATA_DB, { module: 'astrologo-analisar', model: selectedModel, input_tokens: 0, output_tokens: 0, latency_ms: Date.now() - _telStart, status: 'error', error_detail: lastErrorMsg.slice(0, 200) });
@@ -272,7 +272,7 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
       analise = "<p>Perturbação no éter na geração.</p>";
     }
 
-    structuredLog('INFO', 'Análise gerada com sucesso via SDK', { 
+    structuredLog('INFO', 'Análise gerada com sucesso via SDK', {
       bytesHtml: analise.length,
       usage: generationResult.usageMetadata
     });
@@ -318,15 +318,15 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
     }
 
     structuredLog('INFO', 'Análise gerada com sucesso', { analise_length: analise.length });
-    return new Response(JSON.stringify({ success: true, analise }), { 
-      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders } 
+    return new Response(JSON.stringify({ success: true, analise }), {
+      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     structuredLog('ERROR', 'Erro não-tratado na análise astrológica', { error: errorMessage, stack: err instanceof Error ? err.stack : undefined });
-    return new Response(JSON.stringify({ success: false, error: "Falha na comunicação Cósmica." }), { 
-      status: 500, 
-      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders } 
+    return new Response(JSON.stringify({ success: false, error: "Falha na comunicação Cósmica." }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
     });
   }
 }
