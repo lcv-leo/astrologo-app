@@ -1,5 +1,11 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.12] - 2026-04-07
+### Segurança
+- **Vite 8.0.3 → 8.0.7**: Correção de 3 CVEs de severidade alta/média.
+
+### Controle de versão
+- `astrologo-frontend`: APP v02.17.11 → APP v02.17.12
 ## [v02.17.11] - 2026-04-06
 ### Adicionado
 - **Cross-Service AI Telemetry**: Implementação de `logAiUsage` em `analisar.ts` para registro de tokens, latência e status no `ai_usage_logs` (D1).
