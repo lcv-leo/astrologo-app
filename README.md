@@ -1,61 +1,16 @@
-# Astrologo App
+# astrologo-app
 
-Monorepo com dois apps Vite + React + TypeScript:
+> Aplicação focada em integrações LLM para astrologia, baseada na arquitetura Gemini e com prompt-engineering dedicado.
 
-- `astrologo-frontend` (público): **https://mapa-astral.lcv.app.br**
-- `astrologo-admin` (admin): **https://admin-astrologo.lcv.app.br**
+## Ecossistema LCV Workspace
 
-> O admin é protegido por Cloudflare Access.
+Este repositório faz parte do workspace global LCV / Reflexos da Alma e opera de modo integrado aos demais serviços.
 
-## Estrutura
+## Arquitetura & Governança
 
-- `astrologo-frontend/` — app público e funções API de cálculo/análise/envio
-- `astrologo-admin/` — painel administrativo e funções API admin
-- `schema.sql` — schema base do D1
-- `migrations/` — migrações incrementais/idempotentes
+- **Cloudflare**: Implementado utilizando Workers/Pages, KV, D1, e integrações nativas como AI Gateway.
+- **Padrões de Qualidade**: Obedece estritamente às diretivas de `AGENTS.md` e regras de paridade contidas no `.ai/GEMINI.md` e `.github/copilot-instructions.md`.
+- **Yolo Mode & AI Automation**: O desenvolvimento deve priorizar o uso dos MCPs `ultrathink` e `code-reasoning` para planejamento.
 
-## Setup rápido
-
-1. Preencha o arquivo `.env` na raiz.
-2. Instale dependências em cada app:
-   - `astrologo-frontend`: `npm install`
-   - `astrologo-admin`: `npm install`
-
-## Comandos úteis
-
-### Frontend
-
-- `npm run lint`
-- `npm run test`
-- `npm run build`
-
-### Admin
-
-- `npm run lint`
-- `npm run build`
-
-## Segurança e CSP
-
-- CORS restrito a origens `https://*.lcv.app.br` nas APIs.
-- Headers de segurança servidos via `public/_headers` em cada app.
-- CSP contempla Cloudflare Insights (`static.cloudflareinsights.com`) para evitar bloqueios de beacon.
-
-## Rate limiting (fase 3)
-
-As rotas sensíveis usam tabela D1 de janela deslizante simples por chave hash (`rota + IP + user-agent`).
-
-### Migração idempotente
-
-Arquivo:
-
-- `migrations/001_add_api_rate_limits.sql`
-
-Cria (se não existir):
-
-- tabela `api_rate_limits`
-- índices `idx_api_rate_limits_route_window` e `idx_api_rate_limits_updated_at`
-
-## Observações operacionais
-
-- O fallback de origem CORS no frontend é `https://mapa-astral.lcv.app.br`.
-- O fallback de origem CORS no admin é `https://admin-astrologo.lcv.app.br`.
+---
+*Documentação gerada e sincronizada para o Workspace LCV.*
