@@ -1,5 +1,9 @@
 # AI Memory Log - astrologo-app
 
+## 2026-04-08 — GitHub Actions Purge & Dependabot Standardization
+### Escopo
+Auditoria completa de CI/CD para eliminação de "ghost runs" em toda a rede de repositórios do workspace, juntamente com a universalização da configuração do Dependabot ajustada às necessidades de empacotamento locais para mitigar tráfego e limites no API.
+
 ## 2026-04-06 — Astrologo Frontend: HTML Rendering & IA Save Persistence Fix
 ### Escopo
 Resolução da regressão de renderização onde a "Síntese do Mestre (IA)" exibia tags HTML cruas como texto visível, e correção da perda de dados de análise IA ao salvar mapas na nuvem.
@@ -29,3 +33,4 @@ Migração arquitetural unificada para aproveitamento da infraestrutura Cloudfla
 - **Frontend CamelCase Parity**: O renderizador universal `renderMapaCard` foi expandido para puxar keys tanto em `snake_case` (DB nativo) quanto em `camelCase` e do objeto `query` (padrão de array salva como snapshot pelo frontend), permitindo visualização de histórico de mapas da comunidade sem bugar por falhas de parser.
 ### Controle de versão
 - `admin-app`: APP v01.61.01 → APP v01.61.02
+
