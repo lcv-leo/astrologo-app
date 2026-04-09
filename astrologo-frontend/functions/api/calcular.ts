@@ -169,7 +169,7 @@ export async function onRequestPost(context: Context) {
 
         const getPlanetaryHour = () => {
             const bMins = hLocal * 60 + mLocal; const srMins = srH * 60 + srM; const ssMins = ssH * 60 + ssM;
-            let isDay = false; let dayOfWeekAstrological = diaDaSemanaIdx; let minsFromStart = 0; let periodDurationMins = 0;
+            let isDay: boolean; let dayOfWeekAstrological = diaDaSemanaIdx; let minsFromStart: number; let periodDurationMins: number;
 
             if (bMins >= srMins && bMins < ssMins) {
                 isDay = true; minsFromStart = bMins - srMins; periodDurationMins = ssMins - srMins;
