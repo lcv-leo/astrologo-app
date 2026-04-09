@@ -1,5 +1,17 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.13] - 2026-04-08
+### Atualização Tecnológica
+- **ESLint 9 → 10**: Migração para `eslint@10.2.0` e `@eslint/js@10.0.1`.
+- **`.npmrc`**: Criado com `legacy-peer-deps=true` para resolver conflito `eslint-plugin-react-hooks@7` ↔ ESLint 10.
+
+### Corrigido
+- **`_middleware.ts`**: `context: any` substituído por tipagem estrutural `{ request: Request; next: () => Promise<Response> }` — resolve `no-explicit-any`.
+- **`calcular.ts`**: Removidas 3 atribuições iniciais mortas (`isDay`, `minsFromStart`, `periodDurationMins`) que jamais eram lidas (regra `no-useless-assignment` do ESLint 10).
+
+### Controle de versão
+- `astrologo-frontend`: APP v02.17.12 → APP v02.17.13
+
 ## [v02.17.12] - 2026-04-07
 ### Segurança
 - **Vite 8.0.3 → 8.0.7**: Correção de 3 CVEs de severidade alta/média.

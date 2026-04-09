@@ -1,5 +1,15 @@
 # AI Memory Log - astrologo-app
 
+## 2026-04-08 — Tech Upgrade: ESLint 10 + Lint Fix
+### Escopo
+Migração ESLint 9→10 e correção de 4 erros de lint pré-existentes surfaceados pelas regras mais estritas.
+### Feito
+- **ESLint 10.2.0**: Upgrade + `.npmrc` para peer dep compatibility.
+- **`_middleware.ts`**: `context: any` → tipagem estrutural (resolve `no-explicit-any`).
+- **`calcular.ts`**: 3 atribuições mortas removidas (regra `no-useless-assignment`).
+### Versão
+- APP v02.17.12 → APP v02.17.13
+
 ## 2026-04-08 — GitHub Actions Purge & Dependabot Standardization
 ### Escopo
 Auditoria completa de CI/CD para eliminação de "ghost runs" em toda a rede de repositórios do workspace, juntamente com a universalização da configuração do Dependabot ajustada às necessidades de empacotamento locais para mitigar tráfego e limites no API.
