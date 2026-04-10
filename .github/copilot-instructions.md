@@ -9,6 +9,34 @@
 ## 🧠 MEMÓRIA DE CONTEXTO ISOLADO (ASTROLOGO-APP)
 # AI Memory Log - astrologo-app
 
+## 2026-04-08 — Tech Upgrade: ESLint 10 + Lint Fix
+### Escopo
+Migração ESLint 9→10 e correção de 4 erros de lint pré-existentes surfaceados pelas regras mais estritas.
+### Feito
+- **ESLint 10.2.0**: Upgrade + `.npmrc` para peer dep compatibility.
+- **`_middleware.ts`**: `context: any` → tipagem estrutural (resolve `no-explicit-any`).
+- **`calcular.ts`**: 3 atribuições mortas removidas (regra `no-useless-assignment`).
+### Versão
+- APP v02.17.12 → APP v02.17.13
+
+## 2026-04-08 — GitHub Actions Purge & Dependabot Standardization
+### Escopo
+Auditoria completa de CI/CD para eliminação de "ghost runs" em toda a rede de repositórios do workspace, juntamente com a universalização da configuração do Dependabot ajustada às necessidades de empacotamento locais para mitigar tráfego e limites no API.
+
+## 2026-04-06 — Astrologo Frontend: HTML Rendering & IA Save Persistence Fix
+### Escopo
+Resolução da regressão de renderização onde a "Síntese do Mestre (IA)" exibia tags HTML cruas como texto visível, e correção da perda de dados de análise IA ao salvar mapas na nuvem.
+
+### Corrigido
+- **Backend `sanitizeGeneratedHtml()` (analisar.ts)**: Root cause identificado — a função chamava `escapeHtml()` no output HTML do Gemini, convertendo `<p>`, `<strong>` em `&lt;p&gt;`, `&lt;strong&gt;`. Substituído por sanitizador baseado em whitelist de tags (`p`, `strong`, `ul`, `li`, `em`, `b`, `i`, `h1`-`h3`, `br`) com preservação de atributos `style` seguros (`text-align`, `text-indent`).
+- **Frontend DOMPurify (App.tsx)**: `ALLOWED_ATTR: []` → `ALLOWED_ATTR: ['style']` para preservar estilos de alinhamento.
+- **Save flow (App.tsx)**: `analiseIa` era uma variável de estado separada e nunca era mesclada no `result` ao salvar na nuvem. Agora o fluxo faz `{ ...result, analiseIa }` antes de persistir, garantindo que a análise IA apareça na aba "Dados de Usuários" do admin-app.
+- **Admin-app `AstrologoModule.tsx`**: `ALLOWED_ATTR: ['style']` para paridade de renderização.
+- **Migração D1**: Revertidas entidades HTML escapadas em 2 registros históricos na coluna `astrologo_mapas.analise_ia` e limpos `<p><p` duplicados residuais.
+
+### Controle de versão
+- `astrologo-app`: APP v02.17.09 → APP v02.17.10
+- `admin-app`: APP v01.77.43 → APP v01.77.44
 
 ## 2026-04-03 — Cloudflare Paid Scale Integration
 ### Escopo
@@ -26,14 +54,5 @@ Migração arquitetural unificada para aproveitamento da infraestrutura Cloudfla
 - `admin-app`: APP v01.61.01 → APP v01.61.02
 
 
-
-## 🤖 Claude Code — Memória Sincronizada (2026-04-09)
-
-A memória persistente do **Claude Code** está em:
-`C:\Users\leona\.claude\projects\c--Users-leona-lcv-workspace\memory\`
-
-Arquivos: `MEMORY.md` (índice) · `project_workspace.md` · `version_control.md` · `infra_directives.md` · `app_memories_ref.md` · `ai_agents_files.md`
-
-**Diretiva:** Ao atualizar esta memória, atualizar também os arquivos correspondentes da memória do Claude Code para manter paridade entre Gemini, Copilot e Claude Code.
 
 > **DIRETIVA DE SEGURANÇA:** Ao sugerir código ou responder perguntas, leia rigorosamente o contexto e as memórias históricas acima para não divergir das decisões já tomadas pelo outro agente.
