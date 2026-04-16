@@ -1,5 +1,10 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.15] - 2026-04-16
+### Alterado
+- **dompurify**: lockfile refreshed; caret `^3.3.3` agora resolve para 3.4.0, que fixa o bypass de `FORBID_TAGS` quando `ADD_TAGS` é função (Dependabot #13, GHSA-39q2-94rc-95cp, medium severity). O Astrólogo não usa `ADD_TAGS` como função (apenas sanitiza output de IA do Gemini com config default), impacto real zero — mas fecha o alerta.
+- **Lockfile**: `package-lock.json` regenerado (rm -rf + npm install). 237 packages, 0 vulnerabilidades. Build ok (6.4s).
+
 ## [v02.17.14] - 2026-04-10
 ### Adicionado
 - **Biome 2.x**: lint + format com organizeImports
