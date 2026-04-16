@@ -1,5 +1,20 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.16] - 2026-04-16
+### Alterado — limpeza de classes Tailwind
+- **33 warnings** de classes não-canônicas e conflito de CSS resolvidos em `src/App.tsx` (todos pré-existentes, expostos pelo plugin IDE do Tailwind 4). Substituições canônicas:
+  * `z-[99999]` → `z-99999` (4 ocorrências), `z-[100]` → `z-100` (1)
+  * `bg-gradient-to-r` → `bg-linear-to-r` (6)
+  * `flex-shrink-0` → `shrink-0` (6), `flex-grow` → `grow` (2)
+  * `rounded-[2rem]` → `rounded-4xl` (6)
+  * `min-w-[140px]` → `min-w-35` (3), `max-w-[200px]` → `max-w-50` (3)
+  * `[color-scheme:light]` → `scheme-light` (2)
+  * `bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))]` → `bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))]` (1, remove whitespace após vírgula conforme canonical)
+  * Linha 600: `cssConflict` (`absolute` + `fixed` aplicando `position`): removido `absolute`, mantido `fixed` (background decorativo full-viewport com `-z-10`).
+### Motivação
+- Política de qualidade: corrigir todos os diagnósticos detectados (errors + warnings, pré-existentes incluídos).
+- Bundle sem regressão (275.45 vs 275.58 KB — ganho mínimo pelo uso de classes canônicas).
+
 ## [v02.17.15] - 2026-04-16
 ### Alterado
 - **dompurify**: lockfile refreshed; caret `^3.3.3` agora resolve para 3.4.0, que fixa o bypass de `FORBID_TAGS` quando `ADD_TAGS` é função (Dependabot #13, GHSA-39q2-94rc-95cp, medium severity). O Astrólogo não usa `ADD_TAGS` como função (apenas sanitiza output de IA do Gemini com config default), impacto real zero — mas fecha o alerta.

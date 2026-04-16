@@ -12,7 +12,7 @@ import { useNotification } from './components/Notification';
 import { ComplianceBanner } from './components/ComplianceBanner';
 import { LicencasModule } from './modules/compliance/LicencasModule';
 import DOMPurify from 'dompurify';
-const APP_VERSION = 'APP v02.17.15';
+const APP_VERSION = 'APP v02.17.16';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
@@ -81,7 +81,7 @@ const InfoModal: React.FC<ModalProps> = ({ type, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="info-modal-title">
+    <div className="fixed inset-0 z-99999 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="info-modal-title">
       <div className={`md3-glass bg-white/90 backdrop-blur-2xl border ${content.borderColor} p-6 md:p-8 rounded-3xl max-w-2xl w-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] relative overflow-y-auto max-h-[90vh]`}>
         <button onClick={onClose} aria-label="Fechar Modal" title="Fechar Modal" className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition"><X className="w-5 h-5 text-slate-600" /></button>
         <h2 id="info-modal-title" className={`text-2xl md:text-3xl font-black ${content.titleColor} flex items-center gap-3 mb-6 border-b border-slate-200 pb-4`}>{content.icon} {content.titulo}</h2>
@@ -96,14 +96,14 @@ const EmailModal: React.FC<EmailModalProps> = ({ isOpen, onClose, onSend, isSend
   const [email, setEmail] = useState('');
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="email-modal-title">
+    <div className="fixed inset-0 z-99999 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="email-modal-title">
       <div className="md3-glass bg-white/90 backdrop-blur-2xl border border-white p-6 md:p-8 rounded-3xl max-w-md w-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] relative">
         <button onClick={onClose} disabled={isSending} aria-label="Fechar Modal E-mail" title="Fechar" className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition disabled:opacity-50"><X className="w-5 h-5 text-slate-600" /></button>
         <h2 id="email-modal-title" className="text-xl md:text-2xl font-black text-blue-600 flex items-center gap-3 mb-4"><Mail className="w-6 h-6" /> Enviar Dossiê Celestial</h2>
         <p className="text-slate-600 text-sm md:text-base mb-6 leading-relaxed">Insira o endereço de e-mail para receber o relatório astrológico completo e a análise da IA.</p>
         <label htmlFor="emailConsulente" className="sr-only">Endereço de E-mail</label>
         <input type="email" id="emailConsulente" name="email" autoComplete="email" placeholder="usuario@email.com" className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition shadow-inner mb-6 text-base" value={email} onChange={e => setEmail(e.target.value)} disabled={isSending} />
-        <button onClick={() => { if (isValidEmail(email)) onSend(email.trim()); }} disabled={isSending || !isValidEmail(email)} aria-label="Disparar E-mail" className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold p-4 rounded-xl flex justify-center items-center gap-3 transition-all disabled:opacity-50 uppercase tracking-wider shadow-md text-sm md:text-base">
+        <button onClick={() => { if (isValidEmail(email)) onSend(email.trim()); }} disabled={isSending || !isValidEmail(email)} aria-label="Disparar E-mail" className="w-full bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold p-4 rounded-xl flex justify-center items-center gap-3 transition-all disabled:opacity-50 uppercase tracking-wider shadow-md text-sm md:text-base">
           {isSending ? <Sparkles className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />} {isSending ? 'Transmitindo...' : 'Disparar E-mail'}
         </button>
       </div>
@@ -138,9 +138,9 @@ const LocationAutocomplete: React.FC<AutocompleteProps> = ({ value, onChange }) 
       <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
       {loading && <Sparkles className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 animate-spin text-blue-500" />}
       {isOpen && suggestions.length > 0 && (
-        <ul className="absolute z-[100] w-full bg-white/95 backdrop-blur-xl border border-slate-200 mt-2 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-100 max-h-60 overflow-y-auto">
+        <ul className="absolute z-100 w-full bg-white/95 backdrop-blur-xl border border-slate-200 mt-2 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-100 max-h-60 overflow-y-auto">
           {suggestions.map((s, i) => (
-            <li key={i} onMouseDown={(e) => { e.preventDefault(); handleSelect(s); }} className="p-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3 transition-colors"><MapPin className="w-4 h-4 text-blue-500 flex-shrink-0" /><span className="text-sm text-slate-700 font-medium">{[s.name, s.admin1, s.country].filter(Boolean).join(', ')}</span></li>
+            <li key={i} onMouseDown={(e) => { e.preventDefault(); handleSelect(s); }} className="p-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3 transition-colors"><MapPin className="w-4 h-4 text-blue-500 shrink-0" /><span className="text-sm text-slate-700 font-medium">{[s.name, s.admin1, s.country].filter(Boolean).join(', ')}</span></li>
           ))}
         </ul>
       )}
@@ -153,11 +153,11 @@ export const RenderBlocoAstrologico: React.FC<BlocoProps> = ({ titulo, dadosAstr
   return (
     <div className={`mt-10 pt-10 border-t border-${colorTheme}-200 animate-in slide-in-from-top-4 duration-700 w-full`}>
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <h2 className={`text-2xl md:text-3xl font-black flex items-center gap-3 ${colorHex}`}><Icon className="w-8 h-8 flex-shrink-0" /> <span className="leading-tight text-balance">{titulo}</span></h2>
+        <h2 className={`text-2xl md:text-3xl font-black flex items-center gap-3 ${colorHex}`}><Icon className="w-8 h-8 shrink-0" /> <span className="leading-tight text-balance">{titulo}</span></h2>
         <button type="button" aria-label="Saiba mais sobre o módulo" onClick={onInfoClick} className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-full border transition-all text-xs font-bold uppercase tracking-wider shadow-sm bg-white hover:shadow-md border-${colorTheme}-200 ${colorHex} hover:bg-${colorTheme}-50`}><HelpCircle className="w-4 h-4" /> Saiba mais</button>
       </div>
 
-      <div className="bg-white/60 backdrop-blur-xl p-5 md:p-8 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full mb-8">
+      <div className="bg-white/60 backdrop-blur-xl p-5 md:p-8 rounded-4xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full mb-8">
         <h3 className="text-lg md:text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3">I. Astrologia ({isTropical ? '12 Signos' : '13 Signos'})</h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {dadosAstrologia.map((a, i) => (
@@ -166,12 +166,12 @@ export const RenderBlocoAstrologico: React.FC<BlocoProps> = ({ titulo, dadosAstr
         </div>
       </div>
 
-      <div className="bg-white/60 backdrop-blur-xl p-5 md:p-8 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full overflow-hidden">
+      <div className="bg-white/60 backdrop-blur-xl p-5 md:p-8 rounded-4xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full overflow-hidden">
         <h3 className={`text-xl md:text-2xl font-bold ${colorHex} mb-6 flex items-center gap-2 border-b border-slate-200 pb-4`}><Moon className="inline w-6 h-6" /> II. Umbanda ({isTropical ? 'Tropical' : 'Astronômica'})</h3>
         <div className="grid grid-cols-3 gap-2 md:gap-4 w-full">
           {dadosUmbanda.map((u, i) => (
             <div key={i} className={`flex flex-col items-center justify-between p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow min-w-0 w-full h-full`}>
-              <span className="text-2xl md:text-4xl mb-2 md:mb-3 mt-1 drop-shadow-sm flex-shrink-0">{u.simbolo}</span>
+              <span className="text-2xl md:text-4xl mb-2 md:mb-3 mt-1 drop-shadow-sm shrink-0">{u.simbolo}</span>
               <div className="flex items-center justify-center w-full mb-2 md:mb-3 h-8 sm:h-10"><p className="text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs text-slate-500 font-bold uppercase tracking-wider text-center leading-tight line-clamp-2 px-0.5 w-full text-balance">{formatPosicaoLabel(u.posicao)}</p></div>
               <div className={`flex items-center justify-center w-full mt-auto ${bgSoft} py-2 md:py-2.5 px-1 rounded-xl border border-${colorTheme}-200 min-w-0`}><p className={`text-[9px] sm:text-[10px] md:text-sm lg:text-base font-black ${colorHex} uppercase tracking-widest text-center truncate w-full`}>{u.orixa}</p></div>
             </div>
@@ -179,7 +179,7 @@ export const RenderBlocoAstrologico: React.FC<BlocoProps> = ({ titulo, dadosAstr
         </div>
         {!isTropical && (
           <div className="mt-6 flex items-start gap-3 p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-[11px] md:text-sm text-emerald-900 leading-relaxed shadow-sm">
-            <Info className="w-6 h-6 flex-shrink-0 mt-0.5 text-emerald-600" />
+            <Info className="w-6 h-6 shrink-0 mt-0.5 text-emerald-600" />
             <div className="flex flex-col gap-2 w-full">
               <p className="italic">O aplicativo revela a Tríplice Coroa Teórica. A verdadeira entidade regente e seu Orixá definitivo só podem ser atestados inequivocamente através da <strong>Lei de Pemba</strong> pelo Mestre de Iniciação.</p>
               <div className="text-[10px] md:text-xs text-emerald-700/80 border-t border-emerald-200/50 pt-2 mt-1 not-italic"><strong>* Entendendo as Horas:</strong> O <strong>Período (3h)</strong> indica o Orixá que rege a faixa de horas do seu nascimento. O <strong>Astro</strong> revela o planeta astrológico que regia o seu minuto exato de nascimento.</div>
@@ -404,17 +404,17 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
       <EmailModal isOpen={emailModalOpen} onClose={() => setEmailModalOpen(false)} onSend={dispararEmail} isSending={sendingEmail} />
 
       <div className="flex flex-wrap justify-center gap-3 md:gap-4 mb-10">
-        <button onClick={copiar} aria-label="Copiar Tudo" title="Copiar Tudo" className="flex-1 min-w-[140px] max-w-[200px] flex items-center justify-center gap-2 bg-white text-slate-700 hover:bg-slate-50 px-4 py-3 rounded-full transition-all text-[11px] md:text-sm font-bold uppercase tracking-wider border border-slate-200 shadow-sm hover:shadow-md"><Copy className="w-4 h-4" /> Copiar Tudo</button>
-        <button onClick={whatsapp} aria-label="Compartilhar no WhatsApp" title="WhatsApp" className="flex-1 min-w-[140px] max-w-[200px] flex items-center justify-center gap-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-4 py-3 rounded-full transition-all text-[11px] md:text-sm font-bold uppercase tracking-wider border border-emerald-200 shadow-sm hover:shadow-md"><Share2 className="w-4 h-4" /> WhatsApp</button>
-        <button onClick={() => setEmailModalOpen(true)} aria-label="Enviar por E-mail" title="E-mail" className="flex-1 min-w-[140px] max-w-[200px] flex items-center justify-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 px-4 py-3 rounded-full transition-all text-[11px] md:text-sm font-bold uppercase tracking-wider border border-blue-200 shadow-sm hover:shadow-md"><Mail className="w-4 h-4" /> E-mail</button>
+        <button onClick={copiar} aria-label="Copiar Tudo" title="Copiar Tudo" className="flex-1 min-w-35 max-w-50 flex items-center justify-center gap-2 bg-white text-slate-700 hover:bg-slate-50 px-4 py-3 rounded-full transition-all text-[11px] md:text-sm font-bold uppercase tracking-wider border border-slate-200 shadow-sm hover:shadow-md"><Copy className="w-4 h-4" /> Copiar Tudo</button>
+        <button onClick={whatsapp} aria-label="Compartilhar no WhatsApp" title="WhatsApp" className="flex-1 min-w-35 max-w-50 flex items-center justify-center gap-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-4 py-3 rounded-full transition-all text-[11px] md:text-sm font-bold uppercase tracking-wider border border-emerald-200 shadow-sm hover:shadow-md"><Share2 className="w-4 h-4" /> WhatsApp</button>
+        <button onClick={() => setEmailModalOpen(true)} aria-label="Enviar por E-mail" title="E-mail" className="flex-1 min-w-35 max-w-50 flex items-center justify-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 px-4 py-3 rounded-full transition-all text-[11px] md:text-sm font-bold uppercase tracking-wider border border-blue-200 shadow-sm hover:shadow-md"><Mail className="w-4 h-4" /> E-mail</button>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4 md:gap-6 w-full mb-8">
-        <div className="bg-white/70 backdrop-blur-2xl p-5 md:p-8 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full flex flex-col justify-center min-w-0">
+        <div className="bg-white/70 backdrop-blur-2xl p-5 md:p-8 rounded-4xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full flex flex-col justify-center min-w-0">
           <h3 className="text-lg md:text-xl font-bold text-blue-600 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Wind className="text-blue-500 w-5 h-5" /> Forças Globais: Tatwas</h3>
           <div className="space-y-3"><div className="bg-white/80 p-3 md:p-4 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm"><p className="text-[11px] md:text-xs text-slate-500 font-bold uppercase tracking-wide">Principal</p><p className="font-bold text-slate-800 text-sm md:text-base truncate pl-2">{String(result.dadosGlobais.tatwa.principal)}</p></div><div className="bg-white/80 p-3 md:p-4 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm"><p className="text-[11px] md:text-xs text-slate-500 font-bold uppercase tracking-wide">Sub-tatwa</p><p className="font-bold text-slate-800 text-sm md:text-base truncate pl-2">{String(result.dadosGlobais.tatwa.sub)}</p></div></div>
         </div>
-        <div className="bg-white/70 backdrop-blur-2xl p-5 md:p-8 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full flex flex-col justify-center min-w-0">
+        <div className="bg-white/70 backdrop-blur-2xl p-5 md:p-8 rounded-4xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full flex flex-col justify-center min-w-0">
           <h3 className="text-lg md:text-xl font-bold text-blue-600 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Hash className="text-blue-500 w-5 h-5" /> Forças Globais: Numerologia</h3>
           <div className="space-y-3"><div className="flex justify-between items-center bg-white/80 p-3 md:p-4 rounded-xl border border-slate-100 shadow-sm"><span className="text-[11px] md:text-xs text-slate-500 font-bold uppercase tracking-wide">Expressão</span><strong className="text-sm md:text-base text-slate-800">{String(result.dadosGlobais.numerologia.expressao)}</strong></div><div className="flex justify-between items-center bg-white/80 p-3 md:p-4 rounded-xl border border-slate-100 shadow-sm"><span className="text-[11px] md:text-xs text-slate-500 font-bold uppercase tracking-wide">Caminho</span><strong className="text-sm md:text-base text-slate-800">{String(result.dadosGlobais.numerologia.caminhoVida)}</strong></div><div className="flex justify-between items-center bg-white/80 p-3 md:p-4 rounded-xl border border-slate-100 shadow-sm"><span className="text-[11px] md:text-xs text-slate-500 font-bold uppercase tracking-wide">Hora</span><strong className="text-sm md:text-base text-slate-800">{String(result.dadosGlobais.numerologia.vibracaoHora)}</strong></div></div>
         </div>
@@ -423,9 +423,9 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
       <RenderBlocoAstrologico titulo="Módulo I: Astrológico Tropical" dadosAstrologia={result.dadosTropical.astrologia} dadosUmbanda={result.dadosTropical.umbanda} icon={Sun} isTropical={true} onInfoClick={() => openInfoModal('tropical')} />
 
       <div className="w-full my-12 relative group max-w-5xl mx-auto animate-in zoom-in duration-1000">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-200/50 via-indigo-200/50 to-emerald-200/50 rounded-[3rem] blur-2xl transition-all group-hover:via-indigo-300/50"></div>
+        <div className="absolute inset-0 bg-linear-to-r from-orange-200/50 via-indigo-200/50 to-emerald-200/50 rounded-[3rem] blur-2xl transition-all group-hover:via-indigo-300/50"></div>
         <div className="relative w-full bg-white/80 backdrop-blur-2xl border border-white/50 py-8 px-6 md:px-10 rounded-[2.5rem] shadow-[0_8px_32px_rgba(99,102,241,0.15)] flex flex-col items-center justify-center text-center overflow-hidden">
-          <Sparkles className="w-10 h-10 text-indigo-500 flex-shrink-0 animate-pulse mb-3" />
+          <Sparkles className="w-10 h-10 text-indigo-500 shrink-0 animate-pulse mb-3" />
           <div className="flex flex-col items-center max-w-2xl"><h4 className="text-indigo-600 font-black uppercase tracking-widest text-sm md:text-xl mb-2">✨ Agora, a Verdade Oculta! ✨</h4><p className="text-slate-600 text-sm md:text-base leading-relaxed text-balance">O módulo tropical acima revelou a sua <strong>máscara terrena (Persona)</strong>. Desfaça a ilusão sazonal e contemple abaixo a sua <strong>verdadeira assinatura estelar</strong>.</p></div>
         </div>
       </div>
@@ -443,7 +443,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ result, analiseIa, onSol
 
       {analiseIa && (
         <div className="mt-10 p-6 md:p-12 bg-white/80 backdrop-blur-2xl rounded-[3rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-8 duration-500 w-full overflow-hidden">
-          <h3 className="text-xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600 mb-6 md:mb-8 border-b border-slate-200 pb-4 flex items-center gap-3"><BrainCircuit className="text-blue-600 w-6 h-6 md:w-8 md:h-8 flex-shrink-0" /> Síntese do Mestre (IA)</h3>
+          <h3 className="text-xl md:text-3xl font-black text-transparent bg-clip-text bg-linear-to-r from-blue-700 to-indigo-600 mb-6 md:mb-8 border-b border-slate-200 pb-4 flex items-center gap-3"><BrainCircuit className="text-blue-600 w-6 h-6 md:w-8 md:h-8 shrink-0" /> Síntese do Mestre (IA)</h3>
           <div className="text-slate-700 text-sm md:text-base lg:text-lg leading-relaxed md:leading-loose space-y-4 [&_p]:text-justify [&_p]:indent-8 [&_p]:mb-4 [&_strong]:text-slate-900 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-2 [&_li]:text-justify [&_h1]:text-2xl [&_h1]:text-left [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:text-indigo-700 [&_h2]:text-xl [&_h2]:text-left [&_h2]:font-bold [&_h2]:mb-3 [&_h2]:text-indigo-700 [&_h3]:text-lg [&_h3]:text-left [&_h3]:font-bold [&_h3]:mb-2 [&_h3]:text-blue-600" dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(analiseIa) }} />
         </div>
       )}
@@ -597,15 +597,15 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-transparent text-slate-800 font-sans flex flex-col items-center w-full overflow-x-hidden relative">
-      <div className="absolute inset-0 bg-slate-50 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/50 via-slate-50 to-purple-50/50 -z-10 fixed"></div>
+      <div className="fixed inset-0 bg-slate-50 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-blue-50/50 via-slate-50 to-purple-50/50 -z-10"></div>
       <InfoModal type={modalType} onClose={() => setModalType(null)} />
 
       {!showLicenses ? (
-        <div className="max-w-6xl mx-auto w-full flex flex-col items-center flex-grow p-3 sm:p-6 md:p-8">
+        <div className="max-w-6xl mx-auto w-full flex flex-col items-center grow p-3 sm:p-6 md:p-8">
           <header className="text-center mb-10 md:mb-14 w-full flex flex-col items-center px-2 pt-4">
-            <div className="p-4 bg-white/60 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white mb-6"><Compass className="w-12 h-12 md:w-16 md:h-16 text-blue-600" /></div>
+            <div className="p-4 bg-white/60 backdrop-blur-xl rounded-4xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white mb-6"><Compass className="w-12 h-12 md:w-16 md:h-16 text-blue-600" /></div>
             {/* H1 PRINCIPAL MANTÉM A REDUÇÃO DRÁSTICA */}
-            <h1 className="w-full text-center font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600 mb-3 uppercase text-[clamp(10px,2vw,24px)] text-balance">MAPEAMENTO ASTROLÓGICO</h1>
+            <h1 className="w-full text-center font-black tracking-widest text-transparent bg-clip-text bg-linear-to-r from-blue-700 to-indigo-600 mb-3 uppercase text-[clamp(10px,2vw,24px)] text-balance">MAPEAMENTO ASTROLÓGICO</h1>
             <p className="text-slate-600 text-sm md:text-lg font-medium tracking-wide text-balance">Investigue as Influências Astrológicas <span className="text-slate-400 text-[10px] md:text-sm font-normal">(Olhe as Estrelas)</span></p>
           </header>
 
@@ -620,15 +620,15 @@ export default function App() {
             </div>
             <div className="flex flex-col gap-2 w-full">
               <label htmlFor="dataNascimento" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><Calendar className="w-4 h-4 text-blue-500" /> DATA DE NASCIMENTO</label>
-              <input id="dataNascimento" name="birthDate" required type="date" autoComplete="on" aria-label="Data de Nascimento" title="Data de Nascimento" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium [color-scheme:light]" value={formData.dataNascimento} onChange={e => setFormData({ ...formData, dataNascimento: e.target.value })} />
+              <input id="dataNascimento" name="birthDate" required type="date" autoComplete="on" aria-label="Data de Nascimento" title="Data de Nascimento" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium scheme-light" value={formData.dataNascimento} onChange={e => setFormData({ ...formData, dataNascimento: e.target.value })} />
             </div>
             <div className="flex flex-col gap-2 w-full">
               <label htmlFor="horaNascimento" className="flex items-center gap-2 text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-widest ml-2"><Clock className="w-4 h-4 text-blue-500" /> HORÁRIO DE NASCIMENTO <span className="normal-case text-slate-400 font-medium tracking-normal">(HH:mm)</span></label>
-              <input id="horaNascimento" name="birthTime" required type="time" autoComplete="off" aria-label="Horário de Nascimento" title="Horário de Nascimento" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium [color-scheme:light]" value={formData.horaNascimento} onChange={e => setFormData({ ...formData, horaNascimento: e.target.value })} />
+              <input id="horaNascimento" name="birthTime" required type="time" autoComplete="off" aria-label="Horário de Nascimento" title="Horário de Nascimento" className="w-full p-4 pl-5 text-base bg-white/80 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:bg-white outline-none transition shadow-sm font-medium scheme-light" value={formData.horaNascimento} onChange={e => setFormData({ ...formData, horaNascimento: e.target.value })} />
             </div>
 
             <div className="md:col-span-2 mt-4 flex flex-col md:flex-row gap-4 w-full">
-              <button type="submit" disabled={loading} aria-label="Extrair Arquitetura Sagrada" title="Extrair Arquitetura Sagrada" className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black p-5 rounded-2xl flex justify-center items-center gap-3 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 text-lg uppercase tracking-wider">
+              <button type="submit" disabled={loading} aria-label="Extrair Arquitetura Sagrada" title="Extrair Arquitetura Sagrada" className="flex-1 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black p-5 rounded-2xl flex justify-center items-center gap-3 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 text-lg uppercase tracking-wider">
                 {loading ? <Sparkles className="animate-spin w-6 h-6" /> : <><Compass className="w-6 h-6" /> Extrair Arquitetura Sagrada</>}
               </button>
               {result && (
@@ -658,7 +658,7 @@ export default function App() {
           {mapasSalvos.length > 0 && (
             <div className="w-full max-w-4xl mx-auto mt-12 mb-8">
               <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Book className="text-blue-500 w-5 h-5" /> Arquivo Akáshico do Consulente</h3>
-              <div className="grid sm:grid-cols-2 bg-white/60 backdrop-blur-xl p-4 md:p-6 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] gap-4">
+              <div className="grid sm:grid-cols-2 bg-white/60 backdrop-blur-xl p-4 md:p-6 rounded-4xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] gap-4">
                 {mapasSalvos.map((m) => (
                   <div key={m.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-1" onClick={() => { setResult(m); setAnaliseIa(''); window.scrollTo({ top: 300, behavior: 'smooth' }); }}>
                     <strong className="text-slate-800 truncate block text-base">{m.query.nome}</strong>
@@ -670,7 +670,7 @@ export default function App() {
           )}
         </div>
       ) : (
-        <div className="max-w-6xl mx-auto w-full flex flex-col flex-grow p-3 sm:p-6 md:p-8 mt-10">
+        <div className="max-w-6xl mx-auto w-full flex flex-col grow p-3 sm:p-6 md:p-8 mt-10">
           <div className="bg-white/80 backdrop-blur-2xl p-6 md:p-10 rounded-[2.5rem] border border-white shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
             <LicencasModule />
             <div className="flex justify-center mt-8 mb-4">
@@ -697,7 +697,7 @@ export default function App() {
 
       {/* Contato Modal */}
       {showContato && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title" onClick={() => setShowContato(false)}>
+        <div className="fixed inset-0 z-99999 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title" onClick={() => setShowContato(false)}>
           <div className="md3-glass bg-white/95 backdrop-blur-2xl border border-white p-6 md:p-8 rounded-[2.5rem] max-w-lg w-full shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setShowContato(false)} className="absolute top-4 right-4 p-2 cursor-pointer bg-slate-100 hover:bg-slate-200 rounded-full transition"><X className="w-5 h-5 text-slate-600" /></button>
             <h3 id="contact-modal-title" className="text-2xl font-black text-blue-600 mb-2">Mensagem do Mestre</h3>
@@ -710,7 +710,7 @@ export default function App() {
               </div>
               <label htmlFor="contact-message-text" className="sr-only">Sua mensagem</label>
               <textarea id="contact-message-text" name="message" autoComplete="off" required placeholder="Sua mensagem..." maxLength={500} rows={4} className="w-full p-4 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm resize-none" value={contatoForm.message} onChange={e => setContatoForm(p => ({ ...p, message: e.target.value }))} />
-              <button type="submit" disabled={contatoSending} className="w-full mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold p-4 rounded-xl flex justify-center items-center gap-3 transition-all disabled:opacity-50 uppercase tracking-wider shadow-md text-sm">
+              <button type="submit" disabled={contatoSending} className="w-full mt-2 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold p-4 rounded-xl flex justify-center items-center gap-3 transition-all disabled:opacity-50 uppercase tracking-wider shadow-md text-sm">
                 {contatoSending ? <Sparkles className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />} Enviar Mensagem
               </button>
             </form>
@@ -720,7 +720,7 @@ export default function App() {
 
       {/* Auth Modal */}
       {authMode && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" onClick={() => { setAuthMode(null); setAuthStep('email'); setAuthEmail(''); setAuthToken(''); }}>
+        <div className="fixed inset-0 z-99999 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" onClick={() => { setAuthMode(null); setAuthStep('email'); setAuthEmail(''); setAuthToken(''); }}>
           <div className="md3-glass bg-white/95 backdrop-blur-2xl border border-white p-6 md:p-8 rounded-[2.5rem] max-w-sm w-full shadow-2xl relative text-center" onClick={e => e.stopPropagation()}>
             <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 relative">
               {authMode === 'save' ? <Save className="w-8 h-8" /> : authMode === 'delete' ? <Trash2 className="w-8 h-8" /> : <Download className="w-8 h-8" />}
