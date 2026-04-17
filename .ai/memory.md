@@ -1,3 +1,13 @@
+## 2026-04-17 — Astrologo Frontend v02.17.19 (Pages observability rollback after GHA failure)
+### Escopo
+Hotfix de deploy no `astrologo-app` após o GitHub Actions confirmar que `observability` não é suportado em configs de Cloudflare Pages.
+### Alterado
+- `wrangler.json` e `astrologo-frontend/wrangler.json` deixaram de declarar `observability` por serem configs de Pages.
+### Motivação
+- Restaurar o deploy do `astrologo-frontend` sem perder o restante do baseline validado para o app.
+### Versão
+- APP v02.17.18 → APP v02.17.19
+
 ## 2026-04-17 — Astrologo Frontend v02.17.18 (wrangler observability + traces)
 ### Escopo
 Padronização do baseline de observabilidade Cloudflare no `astrologo-app`, cobrindo o config raiz e o `astrologo-frontend`.

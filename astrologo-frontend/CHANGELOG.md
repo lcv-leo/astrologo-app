@@ -1,5 +1,11 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.19] - 2026-04-17
+### Corrigido
+- `../wrangler.json` e `wrangler.json` deixaram de declarar `observability` por serem configs de Cloudflare Pages; os logs do GitHub Actions confirmaram a incompatibilidade com `wrangler 4.83.0`.
+### Motivação
+- Restaurar o deploy do `astrologo-frontend` sem perder o restante do baseline validado na rodada anterior.
+
 ## [v02.17.18] - 2026-04-17
 ### Alterado
 - Os arquivos `../wrangler.json` e `wrangler.json` agora garantem `observability.logs.enabled = true`, `observability.logs.invocation_logs = true` e `observability.traces.enabled = true`.
