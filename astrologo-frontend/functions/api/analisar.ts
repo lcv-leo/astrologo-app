@@ -2,13 +2,12 @@
 // Versão: v02.15.01 + Gemini v1beta Modernization
 // Descrição: API de análise astrológica via Gemini v1beta com token counting, structured outputs, e caching otimizado.
 
-import { getCorsHeaders, hasDisallowedOrigin, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
+import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, jsonResponse, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
 import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai';
 
 interface EnvBindings {
   GEMINI_API_KEY: string;
   BIGDATA_DB: D1DatabaseLike;
-  GLOBAL_RATE_LIMITER: { limit: (options: { key: string }) => Promise<{ success: boolean }> };
 }
 interface Context { request: Request; env: EnvBindings; }
 
@@ -131,27 +130,14 @@ export async function onRequestPost(context: Context) {
   const corsHeaders = getCorsHeaders(request, 'https://mapa-astral.lcv.app.br');
 
   if (hasDisallowedOrigin(request)) {
-    return new Response(JSON.stringify({ success: false, error: "Origem não permitida." }), {
-      status: 403,
-      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
-    });
+    return jsonResponse({ success: false, error: "Origem não permitida." }, 403, corsHeaders);
   }
 
-  const ipForRatelimit = request.headers.get("CF-Connecting-IP") || "unknown";
-
-  // Utilização nativa do Cloudflare Rate Limiter Binding via wrangler.json `GLOBAL_RATE_LIMITER`
-  let rateLimitAllowed = true;
-  if (env.GLOBAL_RATE_LIMITER) {
-    const { success } = await env.GLOBAL_RATE_LIMITER.limit({ key: `astrologo/analisar:${ipForRatelimit}` });
-    rateLimitAllowed = success;
-  } else {
-    structuredLog('WARN', 'GLOBAL_RATE_LIMITER env binding não está injetado na cloudflare. Ratelimiting ignorado!');
-  }
-
-  if (!rateLimitAllowed) {
-    return new Response(JSON.stringify({ success: false, error: "Muitas análises em sequência. Aguarde antes de solicitar outra." }), {
-      status: 429,
-      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
+  const rateLimitError = await enforceRateLimit(env.BIGDATA_DB, request, 'astrologo/analisar');
+  if (rateLimitError) {
+    return new Response(rateLimitError.body, {
+      status: rateLimitError.status,
+      headers: { ...Object.fromEntries(rateLimitError.headers.entries()), ...corsHeaders }
     });
   }
 

@@ -1,9 +1,17 @@
-import { getCorsHeaders, hasDisallowedOrigin, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
+import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, jsonResponse, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
 
 interface EnvBindings { RESEND_API_KEY: string; BIGDATA_DB: D1DatabaseLike; }
 interface Context { request: Request; env: EnvBindings; }
 
 const isValidEmail = (value: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+const sanitizeRichEmailHtml = (input: string): string => input
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+    .replace(/<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi, '')
+    .replace(/<object[\s\S]*?>[\s\S]*?<\/object>/gi, '')
+    .replace(/<embed[\s\S]*?>[\s\S]*?<\/embed>/gi, '')
+    .replace(/\son[a-z]+\s*=\s*(".*?"|'.*?'|[^\s>]+)/gi, '')
+    .replace(/javascript:/gi, '')
+    .slice(0, 120000);
 
 export async function onRequestOptions(context: Context) {
     return new Response(null, { headers: { ...getCorsHeaders(context.request, 'https://mapa-astral.lcv.app.br'), ...securityHeaders } });
@@ -14,36 +22,35 @@ export async function onRequestPost(context: Context) {
     const corsHeaders = getCorsHeaders(request, 'https://mapa-astral.lcv.app.br');
 
     if (hasDisallowedOrigin(request)) {
-        return new Response(JSON.stringify({ success: false, error: "Origem não permitida." }), {
-            status: 403,
-            headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
+        return jsonResponse({ success: false, error: "Origem não permitida." }, 403, corsHeaders);
+    }
+
+    const rateLimitError = await enforceRateLimit(env.BIGDATA_DB, request, 'astrologo/enviar-email');
+    if (rateLimitError) {
+        return new Response(rateLimitError.body, {
+            status: rateLimitError.status,
+            headers: { ...Object.fromEntries(rateLimitError.headers.entries()), ...corsHeaders }
         });
     }
 
     try {
         const payload = await request.json() as Record<string, string>;
         const emailDestino = String(payload.emailDestino ?? '').trim();
-        const relatorioHtml = String(payload.relatorioHtml ?? '');
+        const relatorioHtml = sanitizeRichEmailHtml(String(payload.relatorioHtml ?? ''));
         const relatorioTexto = String(payload.relatorioTexto ?? '');
         const nomeConsulente = String(payload.nomeConsulente ?? '').trim();
         const envRec = env as unknown as Record<string, unknown>;
         const RESEND_API_KEY = (env.RESEND_API_KEY || envRec['RESEND_APP_KEY'] || envRec['RESEND_APPKEY'] || envRec['resend-api-key'] || envRec['resend-appkey'] || envRec['RESEND_APPKEY']) as string;
 
         if (!isValidEmail(emailDestino)) {
-            return new Response(JSON.stringify({ success: false, error: "E-mail de destino inválido." }), {
-                status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
-            });
+            return jsonResponse({ success: false, error: "E-mail de destino inválido." }, 400, corsHeaders);
         }
         if (!relatorioHtml && !relatorioTexto) {
-            return new Response(JSON.stringify({ success: false, error: "Relatório vazio." }), {
-                status: 400, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
-            });
+            return jsonResponse({ success: false, error: "Relatório vazio." }, 400, corsHeaders);
         }
 
         if (!RESEND_API_KEY) {
-            return new Response(JSON.stringify({ success: false, error: "Chave do Resend não encontrada." }), {
-                status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
-            });
+            return jsonResponse({ success: false, error: "Chave do Resend não encontrada." }, 500, corsHeaders);
         }
 
         const res = await fetch('https://api.resend.com/emails', {
@@ -64,17 +71,11 @@ export async function onRequestPost(context: Context) {
         const data = await res.json() as Record<string, unknown>;
 
         if (res.ok) {
-            return new Response(JSON.stringify({ success: true, message: "E-mail enviado com sucesso!" }), {
-                headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
-            });
+            return jsonResponse({ success: true, message: "E-mail enviado com sucesso!" }, 200, corsHeaders);
         } else {
-            return new Response(JSON.stringify({ success: false, error: String(data.message) }), {
-                status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
-            });
+            return jsonResponse({ success: false, error: String(data.message) }, 500, corsHeaders);
         }
     } catch {
-        return new Response(JSON.stringify({ success: false, error: "Falha interna na comunicação do e-mail." }), {
-            status: 500, headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
-        });
+        return jsonResponse({ success: false, error: "Falha interna na comunicação do e-mail." }, 500, corsHeaders);
     }
 }

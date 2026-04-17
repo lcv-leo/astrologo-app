@@ -14,6 +14,19 @@
 
 # AI Memory Log - astrologo-app
 
+## 2026-04-17 — Astrologo Frontend v02.17.17 (rate limit real + origem fail-closed + tokens hashed)
+### Escopo
+Fechamento da auditoria defensiva de 2026-04-17 no `astrologo-app`, removendo o fail-open de rate limiting, endurecendo os fluxos de auth/contato/e-mail e alinhando a suíte ao contrato de segurança atual.
+### Alterado
+- **`requestSecurity.ts`**: origem ausente ou fora de `https://*.lcv.app.br` passou a ser bloqueada; rate limiting real por D1 substituiu a dependência do binder ausente.
+- **`calcular.ts`, `analisar.ts`, `contato.ts`, `enviar-email.ts`, `astrologo-auth.ts`**: todos os fluxos sensíveis passaram a usar o enforcement centralizado de origem/quota.
+- **OTPs e sessões**: tokens passaram a ser persistidos por hash, com lookup compatível durante a transição.
+- **Testes**: `requestSecurity.test.ts` foi atualizado para afirmar o comportamento fail-closed de origem ausente.
+### Motivação
+- Responder à auditoria defensiva fechando a janela de abuso/rate-limit bypass e reduzindo exposição de tokens sensíveis e relay de e-mail.
+### Versão
+- APP v02.17.16 → APP v02.17.17
+
 ## 2026-04-08 — Tech Upgrade: ESLint 10 + Lint Fix
 ### Escopo
 Migração ESLint 9→10 e correção de 4 erros de lint pré-existentes surfaceados pelas regras mais estritas.

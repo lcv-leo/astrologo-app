@@ -30,7 +30,7 @@ describe('requestSecurity', () => {
   it('detecta origem não permitida', () => {
     expect(hasDisallowedOrigin(createRequest('https://evil.com'))).toBe(true);
     expect(hasDisallowedOrigin(createRequest('https://mapa-astral.lcv.app.br'))).toBe(false);
-    expect(hasDisallowedOrigin(createRequest(undefined))).toBe(false);
+    expect(hasDisallowedOrigin(createRequest(undefined))).toBe(true);
   });
 
   it('extrai IP priorizando cabeçalhos do Cloudflare', () => {

@@ -1,5 +1,14 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.17] - 2026-04-17
+### Alterado
+- **Origem e rate limiting fail-closed**: `calcular.ts`, `analisar.ts`, `contato.ts`, `enviar-email.ts` e `astrologo-auth.ts` migraram do limiter ausente/implícito para enforcement real baseado em D1, com rejeição de `Origin` ausente ou fora de `https://*.lcv.app.br`.
+- **Tokens de auth endurecidos**: OTPs e sessões passaram a ser persistidos por hash, com lookup compatível durante a transição para não quebrar o fluxo atual dos usuários.
+- **Relay de e-mail reduzido**: o envio de relatórios/contato passou a aplicar validação de origem, rate limiting e sanitização dos blocos HTML sensíveis antes do Resend.
+- **Suíte alinhada ao novo contrato**: `requestSecurity.test.ts` foi atualizada para afirmar o comportamento seguro de origem ausente como bloqueada.
+### Motivação
+- **Origem da rodada**: fechamento da auditoria defensiva de 2026-04-17, com foco em remover fail-open de rate limiting, reduzir abuso de e-mail e endurecer os fluxos OTP/sessão.
+
 ## [v02.17.16] - 2026-04-16
 ### Alterado — limpeza de classes Tailwind
 - **33 warnings** de classes não-canônicas e conflito de CSS resolvidos em `src/App.tsx` (todos pré-existentes, expostos pelo plugin IDE do Tailwind 4). Substituições canônicas:
@@ -181,4 +190,3 @@
 ## [v02.13.00] — Anterior
 ### Histórico
 - Versão anterior à padronização do controle de versão
-

@@ -1,10 +1,9 @@
 import { calcExpressionNumber, getJulianDate, getTatwaAtMoment, isValidDateString, isValidTimeString, reduceNum, wrapDegrees, type AstroInfo } from './_shared/astroCore';
-import { getCorsHeaders, hasDisallowedOrigin, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
+import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, jsonResponse, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
 
 interface EnvBindings { 
   GEMINI_API_KEY: string; 
   BIGDATA_DB: D1DatabaseLike; 
-  GLOBAL_RATE_LIMITER: { limit: (options: { key: string }) => Promise<{ success: boolean }> };
 }
 interface Context { request: Request; env: EnvBindings; }
 
@@ -24,25 +23,13 @@ export async function onRequestPost(context: Context) {
     const corsHeaders = getCorsHeaders(request, 'https://mapa-astral.lcv.app.br');
 
     if (hasDisallowedOrigin(request)) {
-        return new Response(JSON.stringify({ success: false, error: "Origem não permitida." }), {
-            status: 403,
-            headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
-        });
+        return jsonResponse({ success: false, error: "Origem não permitida." }, 403, corsHeaders);
     }
-
-    const ipForRatelimit = request.headers.get("CF-Connecting-IP") || "unknown";
-    
-    // Utilização nativa do Cloudflare Rate Limiter Binding via wrangler.json `GLOBAL_RATE_LIMITER`
-    let rateLimitAllowed = true;
-    if (env.GLOBAL_RATE_LIMITER) {
-      const { success } = await env.GLOBAL_RATE_LIMITER.limit({ key: `astrologo/calcular:${ipForRatelimit}` });
-      rateLimitAllowed = success;
-    }
-
-    if (!rateLimitAllowed) {
-        return new Response(JSON.stringify({ success: false, error: "Muitas consultas em pouco tempo. Aguarde um pouco antes de tentar novamente." }), {
-            status: 429,
-            headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
+    const rateLimitError = await enforceRateLimit(env.BIGDATA_DB, request, 'astrologo/calcular');
+    if (rateLimitError) {
+        return new Response(rateLimitError.body, {
+            status: rateLimitError.status,
+            headers: { ...Object.fromEntries(rateLimitError.headers.entries()), ...corsHeaders }
         });
     }
 
