@@ -1,5 +1,12 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.18] - 2026-04-17
+### Alterado
+- Os arquivos `../wrangler.json` e `wrangler.json` agora garantem `observability.logs.enabled = true`, `observability.logs.invocation_logs = true` e `observability.traces.enabled = true`.
+### Motivação
+- Padronizar logs de invocação e traces do Cloudflare no `astrologo-app` sem perder campos já existentes de observability.
+
+
 ## [v02.17.17] - 2026-04-17
 ### Alterado
 - **Origem e rate limiting fail-closed**: `calcular.ts`, `analisar.ts`, `contato.ts`, `enviar-email.ts` e `astrologo-auth.ts` migraram do limiter ausente/implícito para enforcement real baseado em D1, com rejeição de `Origin` ausente ou fora de `https://*.lcv.app.br`.

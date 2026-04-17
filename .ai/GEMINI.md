@@ -14,6 +14,17 @@
 
 # AI Memory Log - astrologo-app
 
+## 2026-04-17 — Astrologo Frontend v02.17.18 (wrangler observability + traces)
+### Escopo
+Padronização do baseline de observabilidade Cloudflare no `astrologo-app`, cobrindo o config raiz e o `astrologo-frontend`.
+### Alterado
+- `wrangler.json` e `astrologo-frontend/wrangler.json` agora garantem `observability.logs.enabled = true`, `observability.logs.invocation_logs = true` e `observability.traces.enabled = true`.
+### Motivação
+- Fechar a padronização de telemetria do workspace sem perder campos já existentes de observability.
+### Versão
+- APP v02.17.17 → APP v02.17.18
+
+
 ## 2026-04-17 — Astrologo Frontend v02.17.17 (rate limit real + origem fail-closed + tokens hashed)
 ### Escopo
 Fechamento da auditoria defensiva de 2026-04-17 no `astrologo-app`, removendo o fail-open de rate limiting, endurecendo os fluxos de auth/contato/e-mail e alinhando a suíte ao contrato de segurança atual.

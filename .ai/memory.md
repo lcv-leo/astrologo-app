@@ -1,3 +1,12 @@
+## 2026-04-17 — Astrologo Frontend v02.17.18 (wrangler observability + traces)
+### Escopo
+Padronização do baseline de observabilidade Cloudflare no `astrologo-app`, cobrindo o config raiz e o `astrologo-frontend`.
+### Alterado
+- `wrangler.json` e `astrologo-frontend/wrangler.json` agora garantem `observability.logs.enabled = true`, `observability.logs.invocation_logs = true` e `observability.traces.enabled = true`.
+### Motivação
+- Fechar a padronização de telemetria do workspace sem perder campos já existentes de observability.
+### Versão
+- APP v02.17.17 → APP v02.17.18
 ## 2026-04-10 — Biome 2.x + patches (v02.17.14)
 - Biome 2.x adicionado (lint + format com organizeImports)
 - vite 8.0.7 → 8.0.8, vitest 4.1.2 → 4.1.4, lucide-react 1.7.0 → 1.8.0
