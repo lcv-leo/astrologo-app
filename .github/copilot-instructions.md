@@ -7,13 +7,6 @@
 
 
 ## 🧠 MEMÓRIA DE CONTEXTO ISOLADO (ASTROLOGO-APP)
-## 2026-04-10 — Biome 2.x + patches (v02.17.14)
-- Biome 2.x adicionado (lint + format com organizeImports)
-- vite 8.0.7 → 8.0.8, vitest 4.1.2 → 4.1.4, lucide-react 1.7.0 → 1.8.0
-- Dependabot groups: @vitest/* e @biomejs/* adicionados
-
-# AI Memory Log - astrologo-app
-
 ## 2026-04-17 — Astrologo Frontend v02.17.19 (Pages observability rollback after GHA failure)
 ### Escopo
 Hotfix de deploy no `astrologo-app` após o GitHub Actions confirmar que `observability` não é suportado em configs de Cloudflare Pages.
@@ -33,7 +26,12 @@ Padronização do baseline de observabilidade Cloudflare no `astrologo-app`, cob
 - Fechar a padronização de telemetria do workspace sem perder campos já existentes de observability.
 ### Versão
 - APP v02.17.17 → APP v02.17.18
+## 2026-04-10 — Biome 2.x + patches (v02.17.14)
+- Biome 2.x adicionado (lint + format com organizeImports)
+- vite 8.0.7 → 8.0.8, vitest 4.1.2 → 4.1.4, lucide-react 1.7.0 → 1.8.0
+- Dependabot groups: @vitest/* e @biomejs/* adicionados
 
+# AI Memory Log - astrologo-app
 
 ## 2026-04-17 — Astrologo Frontend v02.17.17 (rate limit real + origem fail-closed + tokens hashed)
 ### Escopo
@@ -91,7 +89,6 @@ Migração arquitetural unificada para aproveitamento da infraestrutura Cloudfla
 - **Frontend CamelCase Parity**: O renderizador universal `renderMapaCard` foi expandido para puxar keys tanto em `snake_case` (DB nativo) quanto em `camelCase` e do objeto `query` (padrão de array salva como snapshot pelo frontend), permitindo visualização de histórico de mapas da comunidade sem bugar por falhas de parser.
 ### Controle de versão
 - `admin-app`: APP v01.61.01 → APP v01.61.02
-
 
 
 > **DIRETIVA DE SEGURANÇA:** Ao sugerir código ou responder perguntas, leia rigorosamente o contexto e as memórias históricas acima para não divergir das decisões já tomadas pelo outro agente.
