@@ -1,19 +1,4 @@
-# Módulo: astrologo-app/.gitignore
-# Versão: v1.0.0
-# Descrição: Regras de exclusão de rastreamento para o novo app.
-
-node_modules/
-dist/
-build/
-.output/
-.env
-.env.local
-.dev.vars
-.wrangler/
-.DS_Store
-Thumbs.db
-
-# Security/local-only artifacts: never commit secrets, local Cloudflare state or generated noise
+# Security/local-only artifacts: never publish secrets, local Cloudflare state or generated noise
 .env
 .env.*
 .dev.vars
