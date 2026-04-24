@@ -12,7 +12,7 @@ import { useNotification } from './components/Notification';
 import { ComplianceBanner } from './components/ComplianceBanner';
 import { LicencasModule } from './modules/compliance/LicencasModule';
 import DOMPurify from 'dompurify';
-const APP_VERSION = 'APP v02.17.19';
+const APP_VERSION = 'APP v02.17.20';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (value: string): boolean => emailRegex.test(value.trim());
@@ -43,7 +43,7 @@ interface AstroData { astro: string; signo: string; simbolo: string; }
 interface UmbandaData { posicao: string; orixa: string; simbolo: string; }
 interface DadosGlobais { tatwa: { principal: string; sub: string; }; numerologia: { expressao: number; caminhoVida: number; vibracaoHora: number; }; }
 interface DadosSistema { astrologia: AstroData[]; umbanda: UmbandaData[]; }
-interface ResultData { id: string; query: { nome: string; localNascimento: string; dataNascimento: string; horaNascimento: string; }; dadosGlobais: DadosGlobais; dadosAstronomica: DadosSistema; dadosTropical: DadosSistema; }
+interface ResultData { id: string; query: { nome: string; localNascimento: string; dataNascimento: string; horaNascimento: string; }; dadosGlobais: DadosGlobais; dadosAstronomica: DadosSistema; dadosTropical: DadosSistema; analiseIa?: string; }
 interface ModalProps { type: 'astronomica' | 'tropical' | null; onClose: () => void; }
 interface EmailModalProps { isOpen: boolean; onClose: () => void; onSend: (email: string) => void; isSending: boolean; }
 interface AutocompleteProps { value: string; onChange: (v: string) => void; }
@@ -660,7 +660,7 @@ export default function App() {
               <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3"><Book className="text-blue-500 w-5 h-5" /> Arquivo Akáshico do Consulente</h3>
               <div className="grid sm:grid-cols-2 bg-white/60 backdrop-blur-xl p-4 md:p-6 rounded-4xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] gap-4">
                 {mapasSalvos.map((m) => (
-                  <div key={m.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-1" onClick={() => { setResult(m); setAnaliseIa(''); window.scrollTo({ top: 300, behavior: 'smooth' }); }}>
+                  <div key={m.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-1" onClick={() => { setResult(m); setAnaliseIa(m.analiseIa ?? ''); window.scrollTo({ top: 300, behavior: 'smooth' }); }}>
                     <strong className="text-slate-800 truncate block text-base">{m.query.nome}</strong>
                     <span className="text-xs text-slate-500">{formatarData(m.query.dataNascimento)} às {m.query.horaNascimento}</span>
                   </div>

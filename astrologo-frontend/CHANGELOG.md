@@ -1,6 +1,11 @@
 # Changelog — Astrólogo Frontend
 
-## [v02.17.19] - 2026-04-17
+## [v02.17.20] - 2026-04-24
+### Corrigido
+- **Resgate via e-mail/código não restaurava a análise de IA**: o `onClick` do card de mapa salvo (App.tsx) executava `setAnaliseIa('')` — descartando a síntese salva — em vez de ler o campo `analiseIa` embutido no `ResultData` recuperado do D1. Agora usa `setAnaliseIa(m.analiseIa ?? '')`.
+- `interface ResultData` passou a declarar `analiseIa?: string`, tipando corretamente o campo que já era persistido (save merge em `{ ...result, analiseIa }`) mas até então invisível ao TypeScript.
+### Motivação
+- Usuário reportou que dados salvos + análise IA apareciam no admin-app/Astrologo (prova que a D1 tinha o campo), mas o front-end público não restaurava a síntese ao clicar no mapa salvo. Bug client-only, sem mudança no worker nem no schema.
 ### Corrigido
 - `../wrangler.json` e `wrangler.json` deixaram de declarar `observability` por serem configs de Cloudflare Pages; os logs do GitHub Actions confirmaram a incompatibilidade com `wrangler 4.83.0`.
 ### Motivação
