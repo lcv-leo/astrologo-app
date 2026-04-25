@@ -37,6 +37,7 @@ jobs:
           npm run build
 
       - name: Inject D1 database_id from secret
+        working-directory: ./astrologo-frontend
         run: |
           if [ -z "${D1_DATABASE_ID:-}" ]; then
             echo "::error::D1_DATABASE_ID secret is not set" >&2

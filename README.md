@@ -68,7 +68,7 @@ npx wrangler d1 create bigdata_db
 
 ### 3. Wire the database_id into wrangler.json
 
-`wrangler.json` (at repo root) ships with placeholder `00000000-0000-0000-0000-000000000000`. Replace it with the ID from step 2:
+`astrologo-frontend/wrangler.json` ships with placeholder `00000000-0000-0000-0000-000000000000`. Replace it with the ID from step 2:
 
 ```jsonc
 {
@@ -105,8 +105,7 @@ npx wrangler pages deploy dist --project-name=astrologo-frontend
 
 This repo uses a sub-project structure:
 
-- `astrologo-frontend/` — React + Vite app + Pages Functions (the actual deployable surface).
-- `wrangler.json` (at root) — D1 binding configuration consumed by `wrangler pages deploy` from the frontend dir.
+- `astrologo-frontend/` — React + Vite app + Pages Functions (the actual deployable surface; contains its own `wrangler.json` with D1 binding).
 - `migrations/` — SQL migrations for D1 schema evolution (auto-bootstrap via Functions covers the baseline; migrations are for incremental changes).
 - `LICENSE`, `NOTICE`, `THIRDPARTY.md`, `SECURITY.md`, `CHANGELOG.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md` — repo conventions at root.
 - `.github/workflows/deploy.yml` — CI: install + build + jq inject D1 ID + wrangler pages deploy.
