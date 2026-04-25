@@ -1,5 +1,27 @@
 # Changelog — Astrólogo Frontend
 
+## [v2.17.20-public-release] - 2026-04-25 — first public release
+### Segurança
+- **CodeQL `js/redos`** (2 alertas high-severity em `functions/api/analisar.ts:85`): regex `SAFE_STYLE_RE = /^(?:\s*(?:text-align|text-indent)\s*:\s*[^;"'<>]+;\s*)+$/i` continha quantificador aninhado `(?:...)+` com `\s*` interno causando backtracking polinomial. Substituído por função linear-time `isSafeStyle(decls)` que faz split em `;` + valida cada declaração manualmente (key ∈ {text-align, text-indent}, value sem `["'<>]`, length ≤ 256). O(n) traversal sem backtracking.
+- **CodeQL `js/incomplete-multi-character-sanitization` + `js/bad-tag-filter` + `js/incomplete-url-scheme-check`** (5 alertas high-severity em `functions/api/enviar-email.ts`): substituída sanitização regex por `sanitize-html` parser-based allowlist. Mesmo playbook aplicado em calculadora-app + oraculo-financeiro nesta sessão.
+- 0 alertas abertos pós-fix em CodeQL re-scan.
+### Deploy fix
+- `wrangler.json` na raiz do repo (com `name: astrologo-app`) era órfão — o Pages project é `astrologo-frontend` (definido em `astrologo-frontend/wrangler.json`). O step `Inject D1 database_id` mutava o root, mas `wrangler pages deploy` rodando de `working-directory: ./astrologo-frontend` resolvia config do CWD = `astrologo-frontend/wrangler.json` (que ainda tinha o placeholder). Deploy #178 (commit `dede313`) falhou com `Error 8000022: Invalid database UUID`. Fix: deletado root `wrangler.json`, jq agora roda com `working-directory: ./astrologo-frontend`.
+### Phase 2 hardening (workspace baseline)
+- License: AGPL-3.0-or-later. README com seção AGPL §13 source-offer.
+- `astrologo-frontend/package.json`: bump 2.17.13 → 2.17.20, +metadata, removido `private: true`.
+- `wrangler.json` (em `astrologo-frontend/`, único agora): literal `database_id` redatado via placeholder + injeção jq no deploy.yml a partir de `D1_DATABASE_ID` secret.
+- Branch ruleset: `deletion` + `non_fast_forward` + `required_status_checks=deploy` + `code_scanning Any/Any`.
+- Workflow permissions: `read` default, allowed_actions `selected`, SHA pinning required.
+- README rewrite: 5-entry badges, Fork & Deploy guide explicando layout sub-projeto, AGPL §13 source-offer.
+- Community files: `CODE_OF_CONDUCT.md` + `CONTRIBUTING.md` + `.github/CODEOWNERS` (criados na raiz do repo).
+- gh-pages branch + Pages live em https://lcv-leo.github.io/astrologo-app/ + FUNDING.yml self-URL.
+- History scrub via `git-filter-repo` (literal D1 ID gone from blobs).
+### Validação
+- `npm run lint` + `npm run build`: GREEN.
+- Deploy CI GREEN no HEAD `6859525` (post-fix run).
+- Cross-review session `fda3ee33` aceita o playbook.
+
 ## [v02.17.20] - 2026-04-24
 ### Corrigido
 - **Resgate via e-mail/código não restaurava a análise de IA**: o `onClick` do card de mapa salvo (App.tsx) executava `setAnaliseIa('')` — descartando a síntese salva — em vez de ler o campo `analiseIa` embutido no `ResultData` recuperado do D1. Agora usa `setAnaliseIa(m.analiseIa ?? '')`.
