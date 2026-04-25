@@ -54,3 +54,20 @@ test-results/
 AGENTS.md
 GEMINI.md
 .github/copilot-instructions.md
+
+# Phase 1 audit additions
+# SQL schema dumps banned (migrations/ folder kept)
+schema.sql
+**/schema.sql
+
+# Internal docs: audit reports, executive summaries, modernizacao logs, examples
+AUDITORIA_*.md
+**/AUDITORIA_*.md
+RESUMO_*.md
+**/RESUMO_*.md
+EXEMPLOS_*.md
+**/EXEMPLOS_*.md
+MODERNIZACAO_*.md
+**/MODERNIZACAO_*.md
+README_MODERNIZACAO*
+**/README_MODERNIZACAO*
