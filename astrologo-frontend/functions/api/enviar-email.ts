@@ -1,17 +1,29 @@
+import sanitizeHtml from 'sanitize-html';
 import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, jsonResponse, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
 
 interface EnvBindings { RESEND_API_KEY: string; BIGDATA_DB: D1DatabaseLike; }
 interface Context { request: Request; env: EnvBindings; }
 
 const isValidEmail = (value: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
-const sanitizeRichEmailHtml = (input: string): string => input
-    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
-    .replace(/<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi, '')
-    .replace(/<object[\s\S]*?>[\s\S]*?<\/object>/gi, '')
-    .replace(/<embed[\s\S]*?>[\s\S]*?<\/embed>/gi, '')
-    .replace(/\son[a-z]+\s*=\s*(".*?"|'.*?'|[^\s>]+)/gi, '')
-    .replace(/javascript:/gi, '')
-    .slice(0, 120000);
+const sanitizeRichEmailHtml = (input: string): string => sanitizeHtml(String(input ?? '').slice(0, 120000), {
+    allowedTags: [
+        'p', 'div', 'span', 'br', 'hr',
+        'strong', 'b', 'em', 'i', 'u', 's',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'ul', 'ol', 'li',
+        'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'a', 'img'
+    ],
+    allowedAttributes: {
+        '*': ['style', 'class'],
+        a: ['href', 'target', 'rel'],
+        img: ['src', 'alt', 'width', 'height']
+    },
+    allowedSchemes: ['http', 'https', 'mailto'],
+    allowedSchemesByTag: { img: ['http', 'https', 'data'] },
+    disallowedTagsMode: 'discard',
+    allowProtocolRelative: false
+});
 
 export async function onRequestOptions(context: Context) {
     return new Response(null, { headers: { ...getCorsHeaders(context.request, 'https://mapa-astral.lcv.app.br'), ...securityHeaders } });

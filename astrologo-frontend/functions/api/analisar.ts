@@ -81,8 +81,27 @@ const sanitizeGeneratedHtml = (input: string): string => {
 
   // Whitelist of allowed HTML tags (matching frontend DOMPurify config + style for alignment)
   const ALLOWED_TAGS = new Set(['p', 'strong', 'ul', 'li', 'em', 'b', 'i', 'h1', 'h2', 'h3', 'br']);
-  // Allow only safe style properties for text alignment/indent
-  const SAFE_STYLE_RE = /^(?:\s*(?:text-align|text-indent)\s*:\s*[^;"'<>]+;\s*)+$/i;
+
+  // Allow only safe style properties for text alignment/indent.
+  // Linear-time validation (no nested-quantifier regex; the prior
+  // /^(?:\s*(?:text-align|text-indent)\s*:\s*[^;"'<>]+;\s*)+$/i was
+  // flagged as polynomial-redos by CodeQL — replaced with a manual
+  // declaration-by-declaration check that runs in O(n).
+  const isSafeStyle = (decls: string): boolean => {
+    if (decls.length > 256) return false;
+    const parts = decls.split(';');
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (!trimmed) continue;
+      const colon = trimmed.indexOf(':');
+      if (colon < 1) return false;
+      const prop = trimmed.slice(0, colon).trim().toLowerCase();
+      const val = trimmed.slice(colon + 1).trim();
+      if (prop !== 'text-align' && prop !== 'text-indent') return false;
+      if (val.length === 0 || /["'<>]/.test(val)) return false;
+    }
+    return true;
+  };
 
   // Strip disallowed tags but keep their text content; preserve allowed tags
   const sanitized = normalized.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>/g, (match, tagName: string, attrs: string) => {
@@ -95,7 +114,7 @@ const sanitizeGeneratedHtml = (input: string): string => {
     if (isClosing) return `</${tag}>`;
     // Parse style attribute if present
     const styleMatch = attrs.match(/style\s*=\s*"([^"]*)"/i);
-    if (styleMatch && SAFE_STYLE_RE.test(styleMatch[1])) {
+    if (styleMatch && isSafeStyle(styleMatch[1])) {
       return `<${tag} style="${styleMatch[1]}">`;
     }
     return `<${tag}>`;
