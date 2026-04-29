@@ -4,7 +4,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-      time: "05:20"
+      time: "03:00"
       timezone: "America/Sao_Paulo"
     labels:
       - "dependencies"
@@ -18,7 +18,7 @@ updates:
     directory: "/astrologo-frontend"
     schedule:
       interval: "daily"
-      time: "05:40"
+      time: "03:00"
       timezone: "America/Sao_Paulo"
     labels:
       - "dependencies"
