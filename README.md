@@ -1,16 +1,27 @@
 <p align="center">
-  <img src=".github/assets/lcv-ideas-software-logo.svg" alt="LCV Ideas &amp; Software" width="220">
+  <img src=".github/assets/lcv-ideas-software-logo.svg" alt="LCV Ideas &amp; Software" width="520" />
 </p>
 
 # astrologo-app
 
 [![status: stable](https://img.shields.io/badge/status-stable-brightgreen.svg)](#status)
-[![version](https://img.shields.io/github/v/release/lcv-leo/astrologo-app.svg)](https://github.com/lcv-leo/astrologo-app/releases)
+[![version](https://img.shields.io/github/v/release/LCV-Ideas-Software/astrologo-app.svg)](https://github.com/LCV-Ideas-Software/astrologo-app/releases)
 [![runtime: Cloudflare Pages](https://img.shields.io/badge/runtime-Cloudflare%20Pages-orange.svg)](https://pages.cloudflare.com/)
 [![framework: React 19 + Vite 8](https://img.shields.io/badge/framework-React%2019%20%2B%20Vite%208-61dafb.svg)](https://react.dev/)
 [![license: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](./LICENSE)
 
 **Astrólogo** — gerador de mapas astrais e análises esotéricas via integração Gemini AI. React 19 + Vite 8 sobre Cloudflare Pages com D1 backing store.
+
+**Status.** Stable. Current release: **v02.17.22**. See [CHANGELOG.md](./CHANGELOG.md) for the full release history.
+
+The version history at a glance:
+
+| Release | Scope |
+|---|---|
+| **`v02.17.22`** | **README organizational standardization.** Adopted the shared repository README opening pattern, corrected public release and clone links to the organization, surfaced the top-level version-history table, and kept the GitHub Sponsors link on `lcv-leo` by explicit beneficiary decision. |
+| **`v02.17.21`** | **Pages modernization.** Migrated fully to the current GitHub Pages artifact-deployment model and enabled idempotent Pages setup for fresh clones/forks. |
+| **`v02.17.20`** | **Pre-public stabilization.** Baseline immediately before the Pages modernization and organization-wide publication parity sweep. |
+| **`Security Publication Hardening`** | **Public repo hygiene.** Hardened ignores and packaging boundaries so agent memories, secrets, and local artifacts stay out of GitHub and npm surfaces. |
 
 ## What it does
 
@@ -57,7 +68,7 @@ You will need:
 ### 1. Clone + install
 
 ```bash
-git clone https://github.com/lcv-leo/astrologo-app.git
+git clone https://github.com/LCV-Ideas-Software/astrologo-app.git
 cd astrologo-app/astrologo-frontend
 npm ci
 ```
