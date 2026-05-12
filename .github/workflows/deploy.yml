@@ -32,7 +32,7 @@ jobs:
       - name: Install + Build Frontend
         working-directory: ./astrologo-frontend
         run: |
-          npm install
+          npm ci --no-audit --no-fund
           npm run build
       - name: Inject D1 database_id from secret
         working-directory: ./astrologo-frontend
