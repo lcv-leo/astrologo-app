@@ -44,3 +44,8 @@ updates:
           - "minor"
           - "patch"
     open-pull-requests-limit: 10
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: daily
