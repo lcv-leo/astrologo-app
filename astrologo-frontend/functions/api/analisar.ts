@@ -2,14 +2,24 @@
 // Versão: v02.15.01 + Gemini v1beta Modernization
 // Descrição: API de análise astrológica via Gemini v1beta com token counting, structured outputs, e caching otimizado.
 
-import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, jsonResponse, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
-import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai';
+import { GoogleGenAI, HarmBlockThreshold, HarmCategory } from '@google/genai';
+import {
+  type D1DatabaseLike,
+  enforceRateLimit,
+  getCorsHeaders,
+  hasDisallowedOrigin,
+  jsonResponse,
+  securityHeaders,
+} from './_shared/requestSecurity';
 
 interface EnvBindings {
   GEMINI_API_KEY: string;
   BIGDATA_DB: D1DatabaseLike;
 }
-interface Context { request: Request; env: EnvBindings; }
+interface Context {
+  request: Request;
+  env: EnvBindings;
+}
 
 /**
  * Logging estruturado com timestamp e contexto
@@ -21,7 +31,7 @@ function structuredLog(level: 'INFO' | 'WARN' | 'ERROR', message: string, contex
     timestamp,
     level,
     message,
-    ...(context && { context })
+    ...(context && { context }),
   };
   console.log(JSON.stringify(logEntry));
 }
@@ -29,28 +39,44 @@ function structuredLog(level: 'INFO' | 'WARN' | 'ERROR', message: string, contex
 // ── Telemetria: registra uso de AI no BIGDATA_DB ──
 function logAiUsage(
   db: D1DatabaseLike | undefined,
-  entry: { module: string; model: string; input_tokens: number; output_tokens: number; latency_ms: number; status: string; error_detail?: string },
+  entry: {
+    module: string;
+    model: string;
+    input_tokens: number;
+    output_tokens: number;
+    latency_ms: number;
+    status: string;
+    error_detail?: string;
+  },
 ) {
   if (!db || typeof db.prepare !== 'function') return;
   (async () => {
     try {
-      await (db.prepare(`
+      await (
+        db.prepare(`
         CREATE TABLE IF NOT EXISTS ai_usage_logs (
           id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT NOT NULL DEFAULT (datetime('now')),
           module TEXT NOT NULL, model TEXT NOT NULL, input_tokens INTEGER DEFAULT 0,
           output_tokens INTEGER DEFAULT 0, latency_ms INTEGER DEFAULT 0,
           status TEXT DEFAULT 'ok', error_detail TEXT
         )
-      `) as { run(): Promise<unknown> }).run();
-      await db.prepare(`
+      `) as { run(): Promise<unknown> }
+      ).run();
+      await db
+        .prepare(`
         INSERT INTO ai_usage_logs (module, model, input_tokens, output_tokens, latency_ms, status, error_detail)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).bind(
-        entry.module, entry.model,
-        entry.input_tokens, entry.output_tokens,
-        entry.latency_ms, entry.status,
-        entry.error_detail || null,
-      ).run();
+      `)
+        .bind(
+          entry.module,
+          entry.model,
+          entry.input_tokens,
+          entry.output_tokens,
+          entry.latency_ms,
+          entry.status,
+          entry.error_detail || null,
+        )
+        .run();
     } catch (err) {
       console.warn('[telemetry] ai_usage_logs INSERT failed:', err instanceof Error ? err.message : err);
     }
@@ -64,8 +90,6 @@ const GEMINI_CONFIG_DEFAULTS = {
   maxOutputTokens: 8192, // Limite robusto de output (docs: importante para controle de custo)
   cachedContentTTL: '3600s', // 1h cache de contexto (docs: reduz custo de prompt repetido)
 };
-
-
 
 const sanitizeGeneratedHtml = (input: string): string => {
   const normalized = input
@@ -104,21 +128,24 @@ const sanitizeGeneratedHtml = (input: string): string => {
   };
 
   // Strip disallowed tags but keep their text content; preserve allowed tags
-  const sanitized = normalized.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>/g, (match, tagName: string, attrs: string) => {
-    const tag = tagName.toLowerCase();
-    if (!ALLOWED_TAGS.has(tag)) {
-      return ''; // Strip disallowed tags entirely
-    }
-    // For allowed tags, only keep safe style attribute
-    const isClosing = match.startsWith('</');
-    if (isClosing) return `</${tag}>`;
-    // Parse style attribute if present
-    const styleMatch = attrs.match(/style\s*=\s*"([^"]*)"/i);
-    if (styleMatch && isSafeStyle(styleMatch[1])) {
-      return `<${tag} style="${styleMatch[1]}">`;
-    }
-    return `<${tag}>`;
-  });
+  const sanitized = normalized.replace(
+    /<\/?([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>/g,
+    (match, tagName: string, attrs: string) => {
+      const tag = tagName.toLowerCase();
+      if (!ALLOWED_TAGS.has(tag)) {
+        return ''; // Strip disallowed tags entirely
+      }
+      // For allowed tags, only keep safe style attribute
+      const isClosing = match.startsWith('</');
+      if (isClosing) return `</${tag}>`;
+      // Parse style attribute if present
+      const styleMatch = attrs.match(/style\s*=\s*"([^"]*)"/i);
+      if (styleMatch && isSafeStyle(styleMatch[1])) {
+        return `<${tag} style="${styleMatch[1]}">`;
+      }
+      return `<${tag}>`;
+    },
+  );
 
   return sanitized;
 };
@@ -131,7 +158,7 @@ const estimateTokenCount = async (ai: GoogleGenAI, prompt: string, model: string
   try {
     const resp = await ai.models.countTokens({
       model,
-      contents: prompt
+      contents: prompt,
     });
     return resp.totalTokens ?? -1;
   } catch (err) {
@@ -141,7 +168,9 @@ const estimateTokenCount = async (ai: GoogleGenAI, prompt: string, model: string
 };
 
 export async function onRequestOptions(context: Context) {
-  return new Response(null, { headers: { ...getCorsHeaders(context.request, 'https://mapa-astral.lcv.app.br'), ...securityHeaders } });
+  return new Response(null, {
+    headers: { ...getCorsHeaders(context.request, 'https://mapa-astral.lcv.app.br'), ...securityHeaders },
+  });
 }
 
 export async function onRequestPost(context: Context) {
@@ -149,26 +178,26 @@ export async function onRequestPost(context: Context) {
   const corsHeaders = getCorsHeaders(request, 'https://mapa-astral.lcv.app.br');
 
   if (hasDisallowedOrigin(request)) {
-    return jsonResponse({ success: false, error: "Origem não permitida." }, 403, corsHeaders);
+    return jsonResponse({ success: false, error: 'Origem não permitida.' }, 403, corsHeaders);
   }
 
   const rateLimitError = await enforceRateLimit(env.BIGDATA_DB, request, 'astrologo/analisar');
   if (rateLimitError) {
     return new Response(rateLimitError.body, {
       status: rateLimitError.status,
-      headers: { ...Object.fromEntries(rateLimitError.headers.entries()), ...corsHeaders }
+      headers: { ...Object.fromEntries(rateLimitError.headers.entries()), ...corsHeaders },
     });
   }
 
   try {
     const _telStart = Date.now();
-    const payload = await request.json() as Record<string, unknown>;
+    const payload = (await request.json()) as Record<string, unknown>;
     const { id, dadosAstronomica, dadosTropical, dadosGlobais, query } = payload;
 
     if (!dadosAstronomica || !dadosTropical || !dadosGlobais || !query) {
-      return new Response(JSON.stringify({ success: false, error: "Dados insuficientes para análise." }), {
+      return new Response(JSON.stringify({ success: false, error: 'Dados insuficientes para análise.' }), {
         status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
+        headers: { 'Content-Type': 'application/json', ...corsHeaders, ...securityHeaders },
       });
     }
 
@@ -194,37 +223,46 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
     let selectedModel = GEMINI_CONFIG_DEFAULTS.model;
     if (env.BIGDATA_DB && typeof env.BIGDATA_DB.prepare === 'function') {
       try {
-        const configRow = await env.BIGDATA_DB.prepare(
-          "SELECT config_json FROM admin_config_store WHERE config_key = 'astrologo-config' LIMIT 1"
-        ).first() as { config_json?: string } | null;
-        if (configRow && configRow.config_json) {
+        const configRow = (await env.BIGDATA_DB.prepare(
+          "SELECT config_json FROM admin_config_store WHERE config_key = 'astrologo-config' LIMIT 1",
+        ).first()) as { config_json?: string } | null;
+        if (configRow?.config_json) {
           const parsedConfig = JSON.parse(configRow.config_json);
           if (parsedConfig && typeof parsedConfig.modeloIA === 'string' && parsedConfig.modeloIA.trim()) {
             selectedModel = parsedConfig.modeloIA.trim();
           }
         }
       } catch (err) {
-        structuredLog('WARN', 'Falha ao recuperar astrologo-config de BIGDATA_DB, usando fallback', { error: String(err) });
+        structuredLog('WARN', 'Falha ao recuperar astrologo-config de BIGDATA_DB, usando fallback', {
+          error: String(err),
+        });
       }
     }
 
     // Inicializa a instância do SDK de vanguarda
     const envRec = env as unknown as Record<string, unknown>;
-    const apiKeyRaw = env.GEMINI_API_KEY || envRec['GEMINI_APP_KEY'] || envRec['gemini-api-key'] || envRec['gemini-app-key'];
+    const apiKeyRaw =
+      env.GEMINI_API_KEY || envRec.GEMINI_APP_KEY || envRec['gemini-api-key'] || envRec['gemini-app-key'];
     const ai = new GoogleGenAI({
-      apiKey: apiKeyRaw && typeof apiKeyRaw === 'object' && 'get' in apiKeyRaw ? await (apiKeyRaw as { get(): Promise<string> }).get() : String(apiKeyRaw || '')
+      apiKey:
+        apiKeyRaw && typeof apiKeyRaw === 'object' && 'get' in apiKeyRaw
+          ? await (apiKeyRaw as { get(): Promise<string> }).get()
+          : String(apiKeyRaw || ''),
     });
 
     // ==== PASSO 1: Token Counting API (v1beta - best practice) ====
-    structuredLog('INFO', 'Iniciando análise astrológica com Gemini SDK', { prompt_length: prompt.length, model: selectedModel });
+    structuredLog('INFO', 'Iniciando análise astrológica com Gemini SDK', {
+      prompt_length: prompt.length,
+      model: selectedModel,
+    });
 
     const tokenCount = await estimateTokenCount(ai, prompt, selectedModel);
     if (tokenCount > 0) {
       structuredLog('INFO', 'Token count estimado', { tokens: tokenCount, max_allowed: 128000 });
       if (tokenCount > 120000) {
-        return new Response(JSON.stringify({ success: false, error: "Dados muito extensos para análise." }), {
+        return new Response(JSON.stringify({ success: false, error: 'Dados muito extensos para análise.' }), {
           status: 413,
-          headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
+          headers: { 'Content-Type': 'application/json', ...corsHeaders, ...securityHeaders },
         });
       }
     }
@@ -248,25 +286,37 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
               { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
               { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
               { category: HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-            ]
-          }
+            ],
+          },
         });
         break; // Sucesso, quebra o loop de retry
       } catch (fetchErr) {
         lastErrorMsg = String(fetchErr);
         structuredLog('WARN', `Tentativa ${t + 1}/2 falhou na requisição Gemini SDK`, { error: lastErrorMsg });
-        if (t === 0) await new Promise(r => setTimeout(r, 800));
-        continue;
+        if (t === 0) await new Promise((r) => setTimeout(r, 800));
       }
     }
 
-    if (!generationResult || !generationResult.text) {
-      structuredLog('ERROR', 'Ambas as tentativas falharam ou retornaram status de erro/incompleto', { error: lastErrorMsg });
-      void logAiUsage(env.BIGDATA_DB, { module: 'astrologo-analisar', model: selectedModel, input_tokens: 0, output_tokens: 0, latency_ms: Date.now() - _telStart, status: 'error', error_detail: lastErrorMsg.slice(0, 200) });
-      return new Response(JSON.stringify({ success: false, error: "Servidor superlotado (Aviso Oculto #77). Tente novamente." }), {
-        status: 504,
-        headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
+    if (!generationResult?.text) {
+      structuredLog('ERROR', 'Ambas as tentativas falharam ou retornaram status de erro/incompleto', {
+        error: lastErrorMsg,
       });
+      void logAiUsage(env.BIGDATA_DB, {
+        module: 'astrologo-analisar',
+        model: selectedModel,
+        input_tokens: 0,
+        output_tokens: 0,
+        latency_ms: Date.now() - _telStart,
+        status: 'error',
+        error_detail: lastErrorMsg.slice(0, 200),
+      });
+      return new Response(
+        JSON.stringify({ success: false, error: 'Servidor superlotado (Aviso Oculto #77). Tente novamente.' }),
+        {
+          status: 504,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders, ...securityHeaders },
+        },
+      );
     }
 
     // ==== PASSO 3: Parse da Resposta e Extração de Tokens Otimizado ====
@@ -274,28 +324,32 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
     let analise = sanitizeGeneratedHtml(generatedText);
 
     if (!analise || analise.trim().length === 0) {
-      analise = "<p>Perturbação no éter na geração.</p>";
+      analise = '<p>Perturbação no éter na geração.</p>';
     }
 
     structuredLog('INFO', 'Análise gerada com sucesso via SDK', {
       bytesHtml: analise.length,
-      usage: generationResult.usageMetadata
+      usage: generationResult.usageMetadata,
     });
 
     // Telemetria de sucesso
     const usage = generationResult.usageMetadata;
     void logAiUsage(env.BIGDATA_DB, {
-      module: 'astrologo-analisar', model: selectedModel,
+      module: 'astrologo-analisar',
+      model: selectedModel,
       input_tokens: usage?.promptTokenCount || 0,
       output_tokens: usage?.candidatesTokenCount || 0,
-      latency_ms: Date.now() - _telStart, status: 'ok'
+      latency_ms: Date.now() - _telStart,
+      status: 'ok',
     });
 
     // ==== PASSO 4: Persistência no banco (D1) ====
     if (env.BIGDATA_DB && id && typeof id === 'string') {
       try {
         try {
-          await env.BIGDATA_DB.prepare("UPDATE astrologo_mapas SET analise_ia = ?, data_analise = datetime('now') WHERE id = ?")
+          await env.BIGDATA_DB.prepare(
+            "UPDATE astrologo_mapas SET analise_ia = ?, data_analise = datetime('now') WHERE id = ?",
+          )
             .bind(analise, id)
             .run();
         } catch (firstPersistErr) {
@@ -308,30 +362,33 @@ USE OBRIGATORIAMENTE emojis e símbolos pictóricos Unicode ao longo de todo o t
 
           structuredLog('WARN', 'Coluna data_analise ausente, aplicando fallback de persistência', {
             id,
-            error: firstMessage
+            error: firstMessage,
           });
 
-          await env.BIGDATA_DB.prepare("UPDATE astrologo_mapas SET analise_ia = ? WHERE id = ?")
+          await env.BIGDATA_DB.prepare('UPDATE astrologo_mapas SET analise_ia = ? WHERE id = ?')
             .bind(analise, id)
             .run();
         }
 
         structuredLog('INFO', 'Análise persistida no banco', { id });
       } catch (dbErr) {
-        structuredLog('WARN', "Erro ao persistir análise no banco (continuando)", { error: String(dbErr) });
+        structuredLog('WARN', 'Erro ao persistir análise no banco (continuando)', { error: String(dbErr) });
       }
     }
 
     structuredLog('INFO', 'Análise gerada com sucesso', { analise_length: analise.length });
     return new Response(JSON.stringify({ success: true, analise }), {
-      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
+      headers: { 'Content-Type': 'application/json', ...corsHeaders, ...securityHeaders },
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    structuredLog('ERROR', 'Erro não-tratado na análise astrológica', { error: errorMessage, stack: err instanceof Error ? err.stack : undefined });
-    return new Response(JSON.stringify({ success: false, error: "Falha na comunicação Cósmica." }), {
+    structuredLog('ERROR', 'Erro não-tratado na análise astrológica', {
+      error: errorMessage,
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+    return new Response(JSON.stringify({ success: false, error: 'Falha na comunicação Cósmica.' }), {
       status: 500,
-      headers: { "Content-Type": "application/json", ...corsHeaders, ...securityHeaders }
+      headers: { 'Content-Type': 'application/json', ...corsHeaders, ...securityHeaders },
     });
   }
 }

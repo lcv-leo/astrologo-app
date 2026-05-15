@@ -1,17 +1,28 @@
-import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, jsonResponse, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
+import {
+  type D1DatabaseLike,
+  enforceRateLimit,
+  getCorsHeaders,
+  hasDisallowedOrigin,
+  jsonResponse,
+  securityHeaders,
+} from './_shared/requestSecurity';
 
 interface EnvBindings {
   RESEND_API_KEY: string;
   BIGDATA_DB: D1DatabaseLike;
 }
 
-interface Context { request: Request; env: EnvBindings; }
-const escapeHtml = (value: string): string => value
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#39;');
+interface Context {
+  request: Request;
+  env: EnvBindings;
+}
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 function getCorsResponse(request: Request, data: unknown, status = 200) {
   const corsHeaders = getCorsHeaders(request, 'https://mapa-astral.lcv.app.br');
@@ -19,7 +30,9 @@ function getCorsResponse(request: Request, data: unknown, status = 200) {
 }
 
 export async function onRequestOptions(context: Context) {
-  return new Response(null, { headers: { ...getCorsHeaders(context.request, 'https://mapa-astral.lcv.app.br'), ...securityHeaders } });
+  return new Response(null, {
+    headers: { ...getCorsHeaders(context.request, 'https://mapa-astral.lcv.app.br'), ...securityHeaders },
+  });
 }
 
 export async function onRequestPost(context: Context) {
@@ -32,16 +45,23 @@ export async function onRequestPost(context: Context) {
   if (rateLimitError) {
     return new Response(rateLimitError.body, {
       status: rateLimitError.status,
-      headers: { ...Object.fromEntries(rateLimitError.headers.entries()), ...getCorsHeaders(request, 'https://mapa-astral.lcv.app.br') },
+      headers: {
+        ...Object.fromEntries(rateLimitError.headers.entries()),
+        ...getCorsHeaders(request, 'https://mapa-astral.lcv.app.br'),
+      },
     });
   }
 
   const envRec = env as unknown as Record<string, unknown>;
-  const apiKey = (env?.RESEND_API_KEY || envRec['RESEND_APP_KEY'] || envRec['RESEND_APPKEY'] || envRec['resend-api-key'] || envRec['resend-appkey']) as string;
+  const apiKey = (env?.RESEND_API_KEY ||
+    envRec.RESEND_APP_KEY ||
+    envRec.RESEND_APPKEY ||
+    envRec['resend-api-key'] ||
+    envRec['resend-appkey']) as string;
   if (!apiKey) return getCorsResponse(request, { ok: false, error: 'RESEND_API_KEY não configurada.' }, 503);
 
   try {
-    const body = await request.json() as { name?: string; phone?: string; email?: string; message?: string };
+    const body = (await request.json()) as { name?: string; phone?: string; email?: string; message?: string };
     const name = (body.name ?? '').trim();
     const phone = (body.phone ?? '').trim();
     const email = (body.email ?? '').trim();
@@ -62,7 +82,7 @@ export async function onRequestPost(context: Context) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         from: 'Oráculo Astrológico <astrologo-app@lcv.app.br>',
@@ -88,7 +108,7 @@ export async function onRequestPost(context: Context) {
     if (res.ok) {
       return getCorsResponse(request, { ok: true, message: 'Mensagem enviada com sucesso!' });
     }
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     return getCorsResponse(request, { ok: false, error: String(data.message ?? 'Falha no envio.') }, 500);
   } catch {
     return getCorsResponse(request, { ok: false, error: 'Falha interna.' }, 500);

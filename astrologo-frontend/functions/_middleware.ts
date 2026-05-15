@@ -8,4 +8,4 @@ export async function onRequest(context: { request: Request; next: () => Promise
   }
 
   return context.next();
-};
+}

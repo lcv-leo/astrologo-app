@@ -1,9 +1,9 @@
 export const securityHeaders = {
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
-  "Cross-Origin-Resource-Policy": "same-site"
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
+  'Cross-Origin-Resource-Policy': 'same-site',
 } as const;
 
 export interface D1Statement<TFirst = unknown> {
@@ -23,54 +23,53 @@ const DEFAULT_RATE_POLICIES = {
   'astrologo/enviar-email': { enabled: 1, max_requests: 4, window_minutes: 60 },
   'astrologo/contato': { enabled: 1, max_requests: 5, window_minutes: 30 },
   'astrologo/auth': { enabled: 1, max_requests: 8, window_minutes: 15 },
-} as const
+} as const;
 
 export const jsonResponse = (body: unknown, status = 200, extraHeaders: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), {
     status,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...securityHeaders,
       ...extraHeaders,
-    }
+    },
   });
-
-
 
 export const isAllowedLcvOrigin = (origin: string): boolean => /^https:\/\/([a-z0-9-]+\.)*lcv\.app\.br$/i.test(origin);
 
 export const getCorsHeaders = (
   request: Request,
   fallbackOrigin: string,
-  methods = "POST, OPTIONS"
+  methods = 'POST, OPTIONS',
 ): Record<string, string> => {
-  const origin = request.headers.get("Origin") || "";
+  const origin = request.headers.get('Origin') || '';
   const allowOrigin = isAllowedLcvOrigin(origin) ? origin : fallbackOrigin;
 
   return {
-    "Access-Control-Allow-Origin": allowOrigin,
-    "Access-Control-Allow-Methods": methods,
-    "Access-Control-Allow-Headers": "Content-Type"
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': methods,
+    'Access-Control-Allow-Headers': 'Content-Type',
   };
 };
 
 export const hasDisallowedOrigin = (request: Request): boolean => {
-  const origin = request.headers.get("Origin")?.trim();
+  const origin = request.headers.get('Origin')?.trim();
   return !origin || !isAllowedLcvOrigin(origin);
 };
 
 export const getClientIp = (request: Request): string => {
-  const cfIp = request.headers.get("CF-Connecting-IP")?.trim();
+  const cfIp = request.headers.get('CF-Connecting-IP')?.trim();
   if (cfIp) return cfIp;
 
-  const forwarded = request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim();
+  const forwarded = request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim();
   if (forwarded) return forwarded;
 
-  return "unknown";
+  return 'unknown';
 };
 
 async function ensureRateLimitTables(db: D1DatabaseLike) {
-  await db.prepare(`
+  await db
+    .prepare(`
     CREATE TABLE IF NOT EXISTS astrologo_rate_limit_policies (
       route TEXT PRIMARY KEY,
       enabled INTEGER NOT NULL DEFAULT 1,
@@ -78,9 +77,11 @@ async function ensureRateLimitTables(db: D1DatabaseLike) {
       window_minutes INTEGER NOT NULL,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
-  `).run();
+  `)
+    .run();
 
-  await db.prepare(`
+  await db
+    .prepare(`
     CREATE TABLE IF NOT EXISTS astrologo_api_rate_limits (
       key TEXT PRIMARY KEY,
       route TEXT NOT NULL,
@@ -88,10 +89,12 @@ async function ensureRateLimitTables(db: D1DatabaseLike) {
       request_count INTEGER NOT NULL DEFAULT 0,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
-  `).run();
+  `)
+    .run();
 
   for (const [route, policy] of Object.entries(DEFAULT_RATE_POLICIES)) {
-    await db.prepare(`
+    await db
+      .prepare(`
       INSERT OR IGNORE INTO astrologo_rate_limit_policies (route, enabled, max_requests, window_minutes)
       VALUES (?, ?, ?, ?)
     `)
@@ -103,7 +106,8 @@ async function ensureRateLimitTables(db: D1DatabaseLike) {
 async function getRateLimitPolicy(db: D1DatabaseLike, route: keyof typeof DEFAULT_RATE_POLICIES) {
   await ensureRateLimitTables(db);
   const fallback = DEFAULT_RATE_POLICIES[route];
-  const row = await db.prepare<{ enabled?: number; max_requests?: number; window_minutes?: number }>(`
+  const row = await db
+    .prepare<{ enabled?: number; max_requests?: number; window_minutes?: number }>(`
     SELECT enabled, max_requests, window_minutes
     FROM astrologo_rate_limit_policies
     WHERE route = ?
@@ -132,7 +136,8 @@ export async function enforceRateLimit(
   const windowStart = Math.floor(Date.now() / bucketSize) * bucketSize;
   const key = `${route}:${ip}:${windowStart}`;
 
-  const row = await db.prepare<{ request_count?: number }>(`
+  const row = await db
+    .prepare<{ request_count?: number }>(`
     SELECT request_count
     FROM astrologo_api_rate_limits
     WHERE key = ?
@@ -144,13 +149,14 @@ export async function enforceRateLimit(
   const currentCount = Number.parseInt(String(row?.request_count ?? 0), 10) || 0;
   if (currentCount >= policy.maxRequests) {
     return jsonResponse(
-      { success: false, error: "Muitas tentativas em pouco tempo. Tente novamente mais tarde." },
+      { success: false, error: 'Muitas tentativas em pouco tempo. Tente novamente mais tarde.' },
       429,
-      { "Retry-After": String(policy.windowMinutes * 60) },
+      { 'Retry-After': String(policy.windowMinutes * 60) },
     );
   }
 
-  await db.prepare(`
+  await db
+    .prepare(`
     INSERT INTO astrologo_api_rate_limits (key, route, window_start, request_count, updated_at)
     VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
     ON CONFLICT(key) DO UPDATE SET
@@ -164,6 +170,8 @@ export async function enforceRateLimit(
 }
 
 export async function hashToken(token: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
-  return Array.from(new Uint8Array(digest)).map((chunk) => chunk.toString(16).padStart(2, "0")).join("");
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  return Array.from(new Uint8Array(digest))
+    .map((chunk) => chunk.toString(16).padStart(2, '0'))
+    .join('');
 }

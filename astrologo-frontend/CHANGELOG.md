@@ -1,5 +1,26 @@
 # Changelog — Astrólogo Frontend
 
+## [v02.17.25] - 2026-05-15
+
+**Patch — 4-gate quality directive compliance (eslint + biome + prettier + cross-review).** Workspace directive 2026-05-15: every code change must pass eslint + biome + prettier + cross-review before Commit & Sync / tag / release / deploy / publish.
+
+### Adicionado
+
+- `npm run biome` (biome check . — uses biome.json scope) + `npm run biome:write` (biome check --write . — auto-fix).
+- `deploy.yml` runs `npm run lint` (eslint) + `npm run biome` after `npm ci` and before `npm run build`, so both static gates fire on every push to `main` and every PR.
+
+### Configurado
+
+- `biome.json` schema URL atualizado `2.4.11` → `2.4.14` (installed CLI version).
+- `biome.json` `files.includes` adicionado: scopes biome para `src/**/*.{ts,tsx,js,jsx}` + `functions/**/*.ts`; exclui `dist/`, `build/`, `.wrangler/`, `node_modules/`, `coverage/`, e CSS files. Sem este scope explícito, biome estava varrendo `dist/` (build artifacts).
+- Rule overrides para padrões legítimos deste codebase React+Tailwind:
+  - `suspicious.{noArrayIndexKey,noImplicitAnyLet}` → off.
+  - `correctness.useExhaustiveDependencies` → off (mount-once useEffect).
+  - `style.noNonNullAssertion` → off (Vite `createRoot(document.getElementById('root')!)` idiom).
+  - `a11y.{useKeyWithClickEvents,useButtonType,noStaticElementInteractions,useAriaPropsSupportedByRole}` → off.
+  - `security.noDangerouslySetInnerHtml` → off (SVG/HTML embedding com sanitização explícita).
+- `package.json` version sincronizada com `APP_VERSION`: `2.17.20` → `2.17.25` (estavam fora de sync — `APP_VERSION` já estava em `v02.17.24`).
+
 ## [v2.17.20-public-release] - 2026-04-25 — first public release
 ### Segurança
 - **CodeQL `js/redos`** (2 alertas high-severity em `functions/api/analisar.ts:85`): regex `SAFE_STYLE_RE = /^(?:\s*(?:text-align|text-indent)\s*:\s*[^;"'<>]+;\s*)+$/i` continha quantificador aninhado `(?:...)+` com `\s*` interno causando backtracking polinomial. Substituído por função linear-time `isSafeStyle(decls)` que faz split em `;` + valida cada declaração manualmente (key ∈ {text-align, text-indent}, value sem `["'<>]`, length ≤ 256). O(n) traversal sem backtracking.

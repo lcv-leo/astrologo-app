@@ -1,6 +1,6 @@
 {
   "name": "astrologo-frontend",
-  "version": "2.17.20",
+  "version": "2.17.25",
   "description": "Astrólogo — gerador de mapas astrais e análises esotéricas via integração Gemini AI. React 19 + Vite 8 sobre Cloudflare Pages com D1 backing store.",
   "license": "AGPL-3.0-or-later",
   "author": "Leonardo Cardozo Vargas (lcv-leo)",
@@ -20,6 +20,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "biome": "biome check .",
+    "biome:write": "biome check --write .",
     "test": "vitest run",
     "preview": "vite preview",
     "format": "biome format --write src"

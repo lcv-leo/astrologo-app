@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { calcExpressionNumber, getJulianDate, getTatwaAtMoment, isValidDateString, isValidTimeString, reduceNum, toHourMinute, wrapDegrees } from './astroCore';
+import {
+  calcExpressionNumber,
+  getJulianDate,
+  getTatwaAtMoment,
+  isValidDateString,
+  isValidTimeString,
+  reduceNum,
+  toHourMinute,
+  wrapDegrees,
+} from './astroCore';
 
 describe('astroCore', () => {
   it('valida datas reais e rejeita datas inválidas', () => {

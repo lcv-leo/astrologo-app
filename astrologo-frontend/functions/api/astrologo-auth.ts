@@ -1,11 +1,22 @@
-import { enforceRateLimit, getCorsHeaders, hasDisallowedOrigin, hashToken, jsonResponse, securityHeaders, type D1DatabaseLike } from './_shared/requestSecurity';
+import {
+  type D1DatabaseLike,
+  enforceRateLimit,
+  getCorsHeaders,
+  hasDisallowedOrigin,
+  hashToken,
+  jsonResponse,
+  securityHeaders,
+} from './_shared/requestSecurity';
 
 interface EnvBindings {
   BIGDATA_DB: D1DatabaseLike;
   RESEND_API_KEY: string;
 }
 
-interface Context { request: Request; env: EnvBindings; }
+interface Context {
+  request: Request;
+  env: EnvBindings;
+}
 
 function getCorsResponse(request: Request, data: unknown, status = 200) {
   const corsHeaders = getCorsHeaders(request, 'https://mapa-astral.lcv.app.br');
@@ -13,7 +24,9 @@ function getCorsResponse(request: Request, data: unknown, status = 200) {
 }
 
 export async function onRequestOptions(context: Context) {
-  return new Response(null, { headers: { ...getCorsHeaders(context.request, 'https://mapa-astral.lcv.app.br'), ...securityHeaders } });
+  return new Response(null, {
+    headers: { ...getCorsHeaders(context.request, 'https://mapa-astral.lcv.app.br'), ...securityHeaders },
+  });
 }
 
 function generateOTP(): string {
@@ -29,9 +42,10 @@ async function createSessionToken(db: D1DatabaseLike, email: string): Promise<st
   const hashedSessionToken = await hashToken(sessionToken);
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
   const id = crypto.randomUUID();
-  await db.prepare(
-    `INSERT INTO astrologo_auth_tokens (id, email, token, action, expires_at) VALUES (?, ?, ?, 'session', ?)`
-  ).bind(id, email, hashedSessionToken, expiresAt).run();
+  await db
+    .prepare(`INSERT INTO astrologo_auth_tokens (id, email, token, action, expires_at) VALUES (?, ?, ?, 'session', ?)`)
+    .bind(id, email, hashedSessionToken, expiresAt)
+    .run();
   return sessionToken;
 }
 
@@ -41,7 +55,7 @@ async function sendTokenEmail(email: string, token: string, apiKey: string): Pro
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         from: 'Oráculo Astrológico <astrologo-app@lcv.app.br>',
@@ -66,7 +80,8 @@ async function sendTokenEmail(email: string, token: string, apiKey: string): Pro
 }
 
 async function ensureTables(db: D1DatabaseLike): Promise<void> {
-  await db.prepare(`
+  await db
+    .prepare(`
     CREATE TABLE IF NOT EXISTS astrologo_user_data (
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL,
@@ -74,9 +89,11 @@ async function ensureTables(db: D1DatabaseLike): Promise<void> {
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     )
-  `).run();
+  `)
+    .run();
 
-  await db.prepare(`
+  await db
+    .prepare(`
     CREATE TABLE IF NOT EXISTS astrologo_auth_tokens (
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL,
@@ -87,9 +104,14 @@ async function ensureTables(db: D1DatabaseLike): Promise<void> {
       used INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     )
-  `).run();
+  `)
+    .run();
 
-  try { await db.prepare(`ALTER TABLE astrologo_mapas ADD COLUMN email TEXT DEFAULT ''`).run(); } catch { /* exists */ }
+  try {
+    await db.prepare(`ALTER TABLE astrologo_mapas ADD COLUMN email TEXT DEFAULT ''`).run();
+  } catch {
+    /* exists */
+  }
 }
 
 async function stampEmailOnRecords(db: D1DatabaseLike, email: string, dadosJson: string): Promise<void> {
@@ -123,12 +145,19 @@ export async function onRequestPost(context: Context) {
   if (rateLimitError) {
     return new Response(rateLimitError.body, {
       status: rateLimitError.status,
-      headers: { ...Object.fromEntries(rateLimitError.headers.entries()), ...getCorsHeaders(request, 'https://mapa-astral.lcv.app.br') },
+      headers: {
+        ...Object.fromEntries(rateLimitError.headers.entries()),
+        ...getCorsHeaders(request, 'https://mapa-astral.lcv.app.br'),
+      },
     });
   }
 
   const envRec = env as unknown as Record<string, unknown>;
-  const apiKey = (env?.RESEND_API_KEY || envRec['RESEND_APP_KEY'] || envRec['RESEND_APPKEY'] || envRec['resend-api-key'] || envRec['resend-appkey']) as string;
+  const apiKey = (env?.RESEND_API_KEY ||
+    envRec.RESEND_APP_KEY ||
+    envRec.RESEND_APPKEY ||
+    envRec['resend-api-key'] ||
+    envRec['resend-appkey']) as string;
   if (!apiKey) {
     return getCorsResponse(request, { ok: false, error: 'RESEND_API_KEY não configurada.' }, 503);
   }
@@ -136,11 +165,11 @@ export async function onRequestPost(context: Context) {
   await ensureTables(db);
 
   try {
-    const body = await request.json() as { action: string; email?: string; token?: string; dados?: unknown };
+    const body = (await request.json()) as { action: string; email?: string; token?: string; dados?: unknown };
     const action = body.action;
     const email = (body.email ?? '').trim().toLowerCase();
 
-    if (!email || !email.includes('@')) {
+    if (!email?.includes('@')) {
       return getCorsResponse(request, { ok: false, error: 'E-mail inválido.' }, 400);
     }
 
@@ -154,9 +183,12 @@ export async function onRequestPost(context: Context) {
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
       const id = crypto.randomUUID();
 
-      await db.prepare(
-        `INSERT INTO astrologo_auth_tokens (id, email, token, action, dados_json, expires_at) VALUES (?, ?, ?, 'save', ?, ?)`
-      ).bind(id, email, hashedOtp, JSON.stringify(body.dados), expiresAt).run();
+      await db
+        .prepare(
+          `INSERT INTO astrologo_auth_tokens (id, email, token, action, dados_json, expires_at) VALUES (?, ?, ?, 'save', ?, ?)`,
+        )
+        .bind(id, email, hashedOtp, JSON.stringify(body.dados), expiresAt)
+        .run();
 
       const sent = await sendTokenEmail(email, token, apiKey);
       if (!sent) {
@@ -171,11 +203,14 @@ export async function onRequestPost(context: Context) {
       if (!token) return getCorsResponse(request, { ok: false, error: 'Token não fornecido.' }, 400);
       const hashedOtp = await hashToken(token);
 
-      const row = await db.prepare<{ id: string; dados_json: string; expires_at: string }>(
-        `SELECT id, dados_json, expires_at FROM astrologo_auth_tokens 
+      const row = await db
+        .prepare<{ id: string; dados_json: string; expires_at: string }>(
+          `SELECT id, dados_json, expires_at FROM astrologo_auth_tokens 
          WHERE email = ? AND token IN (?, ?) AND action = 'save' AND used = 0 
-         ORDER BY created_at DESC LIMIT 1`
-      ).bind(email, token, hashedOtp).first();
+         ORDER BY created_at DESC LIMIT 1`,
+        )
+        .bind(email, token, hashedOtp)
+        .first();
 
       if (!row) return getCorsResponse(request, { ok: false, error: 'Código inválido ou expirado.' }, 401);
       if (new Date(row.expires_at as string) < new Date()) {
@@ -184,17 +219,22 @@ export async function onRequestPost(context: Context) {
 
       await db.prepare('UPDATE astrologo_auth_tokens SET used = 1 WHERE id = ?').bind(row.id).run();
 
-      const existingData = await db.prepare('SELECT id FROM astrologo_user_data WHERE email = ? LIMIT 1').bind(email).first();
+      const existingData = await db
+        .prepare('SELECT id FROM astrologo_user_data WHERE email = ? LIMIT 1')
+        .bind(email)
+        .first();
 
       if (existingData) {
-        await db.prepare(
-          `UPDATE astrologo_user_data SET dados_json = ?, updated_at = datetime('now') WHERE email = ?`
-        ).bind(row.dados_json, email).run();
+        await db
+          .prepare(`UPDATE astrologo_user_data SET dados_json = ?, updated_at = datetime('now') WHERE email = ?`)
+          .bind(row.dados_json, email)
+          .run();
       } else {
         const dataId = crypto.randomUUID();
-        await db.prepare(
-          `INSERT INTO astrologo_user_data (id, email, dados_json) VALUES (?, ?, ?)`
-        ).bind(dataId, email, row.dados_json).run();
+        await db
+          .prepare(`INSERT INTO astrologo_user_data (id, email, dados_json) VALUES (?, ?, ?)`)
+          .bind(dataId, email, row.dados_json)
+          .run();
       }
 
       await stampEmailOnRecords(db, email, row.dados_json as string);
@@ -205,12 +245,16 @@ export async function onRequestPost(context: Context) {
     }
 
     if (action === 'request-token') {
-      const existingData = await db.prepare(
-        'SELECT id FROM astrologo_user_data WHERE email = ? LIMIT 1'
-      ).bind(email).first();
+      const existingData = await db
+        .prepare('SELECT id FROM astrologo_user_data WHERE email = ? LIMIT 1')
+        .bind(email)
+        .first();
 
       if (!existingData) {
-        return getCorsResponse(request, { ok: true, message: 'Se houver dados vinculados a este e-mail, um código será enviado.' });
+        return getCorsResponse(request, {
+          ok: true,
+          message: 'Se houver dados vinculados a este e-mail, um código será enviado.',
+        });
       }
 
       const token = generateOTP();
@@ -218,16 +262,22 @@ export async function onRequestPost(context: Context) {
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
       const id = crypto.randomUUID();
 
-      await db.prepare(
-        `INSERT INTO astrologo_auth_tokens (id, email, token, action, expires_at) VALUES (?, ?, ?, 'retrieve', ?)`
-      ).bind(id, email, hashedOtp, expiresAt).run();
+      await db
+        .prepare(
+          `INSERT INTO astrologo_auth_tokens (id, email, token, action, expires_at) VALUES (?, ?, ?, 'retrieve', ?)`,
+        )
+        .bind(id, email, hashedOtp, expiresAt)
+        .run();
 
       const sent = await sendTokenEmail(email, token, apiKey);
       if (!sent) {
         return getCorsResponse(request, { ok: false, error: 'Falha ao enviar e-mail. Tente novamente.' }, 502);
       }
 
-      return getCorsResponse(request, { ok: true, message: 'Se houver dados vinculados a este e-mail, um código será enviado.' });
+      return getCorsResponse(request, {
+        ok: true,
+        message: 'Se houver dados vinculados a este e-mail, um código será enviado.',
+      });
     }
 
     if (action === 'retrieve') {
@@ -235,11 +285,14 @@ export async function onRequestPost(context: Context) {
       if (!token) return getCorsResponse(request, { ok: false, error: 'Token não fornecido.' }, 400);
       const hashedOtp = await hashToken(token);
 
-      const row = await db.prepare<{ id: string; expires_at: string }>(
-        `SELECT id, expires_at FROM astrologo_auth_tokens 
+      const row = await db
+        .prepare<{ id: string; expires_at: string }>(
+          `SELECT id, expires_at FROM astrologo_auth_tokens 
          WHERE email = ? AND token IN (?, ?) AND action = 'retrieve' AND used = 0 
-         ORDER BY created_at DESC LIMIT 1`
-      ).bind(email, token, hashedOtp).first();
+         ORDER BY created_at DESC LIMIT 1`,
+        )
+        .bind(email, token, hashedOtp)
+        .first();
 
       if (!row) return getCorsResponse(request, { ok: false, error: 'Código inválido ou expirado.' }, 401);
       if (new Date(row.expires_at as string) < new Date()) {
@@ -248,9 +301,10 @@ export async function onRequestPost(context: Context) {
 
       await db.prepare('UPDATE astrologo_auth_tokens SET used = 1 WHERE id = ?').bind(row.id).run();
 
-      const userData = await db.prepare<{ dados_json: string }>(
-        'SELECT dados_json FROM astrologo_user_data WHERE email = ? LIMIT 1'
-      ).bind(email).first();
+      const userData = await db
+        .prepare<{ dados_json: string }>('SELECT dados_json FROM astrologo_user_data WHERE email = ? LIMIT 1')
+        .bind(email)
+        .first();
 
       if (!userData) return getCorsResponse(request, { ok: false, error: 'Nenhum dado encontrado.' }, 404);
 
@@ -261,14 +315,18 @@ export async function onRequestPost(context: Context) {
 
     if (action === 'session-retrieve') {
       const sessionTokenInput = (body.token ?? '').trim();
-      if (!sessionTokenInput) return getCorsResponse(request, { ok: false, error: 'Session token não fornecido.' }, 400);
+      if (!sessionTokenInput)
+        return getCorsResponse(request, { ok: false, error: 'Session token não fornecido.' }, 400);
       const hashedSessionToken = await hashToken(sessionTokenInput);
 
-      const row = await db.prepare<{ id: string; email: string; expires_at: string }>(
-        `SELECT id, email, expires_at FROM astrologo_auth_tokens 
+      const row = await db
+        .prepare<{ id: string; email: string; expires_at: string }>(
+          `SELECT id, email, expires_at FROM astrologo_auth_tokens 
          WHERE token IN (?, ?) AND action = 'session' AND used = 0 
-         ORDER BY created_at DESC LIMIT 1`
-      ).bind(sessionTokenInput, hashedSessionToken).first();
+         ORDER BY created_at DESC LIMIT 1`,
+        )
+        .bind(sessionTokenInput, hashedSessionToken)
+        .first();
 
       if (!row) return getCorsResponse(request, { ok: false, error: 'Sessão inválida ou expirada.' }, 401);
 
@@ -281,25 +339,34 @@ export async function onRequestPost(context: Context) {
         return getCorsResponse(request, { ok: false, error: 'Sessão expirada. Autentique-se novamente.' }, 401);
       }
 
-      const userData = await db.prepare<{ dados_json: string }>(
-        'SELECT dados_json FROM astrologo_user_data WHERE email = ? LIMIT 1'
-      ).bind(email).first();
+      const userData = await db
+        .prepare<{ dados_json: string }>('SELECT dados_json FROM astrologo_user_data WHERE email = ? LIMIT 1')
+        .bind(email)
+        .first();
 
       if (!userData) return getCorsResponse(request, { ok: false, error: 'Nenhum dado encontrado.' }, 404);
 
       await db.prepare('UPDATE astrologo_auth_tokens SET used = 1 WHERE id = ?').bind(row.id).run();
       const newSessionToken = await createSessionToken(db, email);
 
-      return getCorsResponse(request, { ok: true, dados: JSON.parse(userData.dados_json as string), sessionToken: newSessionToken });
+      return getCorsResponse(request, {
+        ok: true,
+        dados: JSON.parse(userData.dados_json as string),
+        sessionToken: newSessionToken,
+      });
     }
 
     if (action === 'request-delete-token') {
-      const existingData = await db.prepare(
-        'SELECT id FROM astrologo_user_data WHERE email = ? LIMIT 1'
-      ).bind(email).first();
+      const existingData = await db
+        .prepare('SELECT id FROM astrologo_user_data WHERE email = ? LIMIT 1')
+        .bind(email)
+        .first();
 
       if (!existingData) {
-        return getCorsResponse(request, { ok: true, message: 'Se houver dados vinculados a este e-mail, um código será enviado.' });
+        return getCorsResponse(request, {
+          ok: true,
+          message: 'Se houver dados vinculados a este e-mail, um código será enviado.',
+        });
       }
 
       const token = generateOTP();
@@ -307,16 +374,22 @@ export async function onRequestPost(context: Context) {
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
       const id = crypto.randomUUID();
 
-      await db.prepare(
-        `INSERT INTO astrologo_auth_tokens (id, email, token, action, expires_at) VALUES (?, ?, ?, 'delete', ?)`
-      ).bind(id, email, hashedOtp, expiresAt).run();
+      await db
+        .prepare(
+          `INSERT INTO astrologo_auth_tokens (id, email, token, action, expires_at) VALUES (?, ?, ?, 'delete', ?)`,
+        )
+        .bind(id, email, hashedOtp, expiresAt)
+        .run();
 
       const sent = await sendTokenEmail(email, token, apiKey);
       if (!sent) {
         return getCorsResponse(request, { ok: false, error: 'Falha ao enviar e-mail. Tente novamente.' }, 502);
       }
 
-      return getCorsResponse(request, { ok: true, message: 'Se houver dados vinculados a este e-mail, um código será enviado.' });
+      return getCorsResponse(request, {
+        ok: true,
+        message: 'Se houver dados vinculados a este e-mail, um código será enviado.',
+      });
     }
 
     if (action === 'verify-delete') {
@@ -324,11 +397,14 @@ export async function onRequestPost(context: Context) {
       if (!token) return getCorsResponse(request, { ok: false, error: 'Token não fornecido.' }, 400);
       const hashedOtp = await hashToken(token);
 
-      const row = await db.prepare<{ id: string; expires_at: string }>(
-        `SELECT id, expires_at FROM astrologo_auth_tokens 
+      const row = await db
+        .prepare<{ id: string; expires_at: string }>(
+          `SELECT id, expires_at FROM astrologo_auth_tokens 
          WHERE email = ? AND token IN (?, ?) AND action = 'delete' AND used = 0 
-         ORDER BY created_at DESC LIMIT 1`
-      ).bind(email, token, hashedOtp).first();
+         ORDER BY created_at DESC LIMIT 1`,
+        )
+        .bind(email, token, hashedOtp)
+        .first();
 
       if (!row) return getCorsResponse(request, { ok: false, error: 'Código inválido ou expirado.' }, 401);
       if (new Date(row.expires_at as string) < new Date()) {
@@ -345,11 +421,14 @@ export async function onRequestPost(context: Context) {
     }
 
     return getCorsResponse(request, { ok: false, error: `Ação desconhecida: ${action}` }, 400);
-
   } catch (error) {
-    return getCorsResponse(request, {
-      ok: false,
-      error: error instanceof Error ? error.message : 'Erro interno.',
-    }, 500);
+    return getCorsResponse(
+      request,
+      {
+        ok: false,
+        error: error instanceof Error ? error.message : 'Erro interno.',
+      },
+      500,
+    );
   }
 }
