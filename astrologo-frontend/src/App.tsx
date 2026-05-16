@@ -275,7 +275,6 @@ const LocationAutocomplete: React.FC<AutocompleteProps> = ({ value, onChange }) 
   const [loading, setLoading] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: prop-to-state sync pattern (controlled input)
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing prop-to-state sync; flagged for follow-up refactor
     setQuery(value);
